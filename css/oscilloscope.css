@@ -1,0 +1,174 @@
+/* Oscilloscope Waveform Display */
+.oscilloscope-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 520px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Trace Selector Legend Bar */
+.trace-legend-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: var(--bg-input);
+  border-bottom: 1px solid var(--border-color);
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.trace-toggles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.trace-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  user-select: none;
+  transition: var(--transition);
+}
+
+.trace-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.trace-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.trace-pill.active[data-trace="vin"] {
+  border-color: var(--trace-vin);
+  color: var(--trace-vin);
+  background: rgba(0, 242, 254, 0.12);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+}
+
+.trace-pill.active[data-trace="gate"] {
+  border-color: var(--trace-gate);
+  color: var(--trace-gate);
+  background: rgba(192, 132, 252, 0.12);
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.2);
+}
+
+.trace-pill.active[data-trace="vout"] {
+  border-color: var(--trace-vout);
+  color: var(--trace-vout);
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.trace-pill.active[data-trace="iout"] {
+  border-color: var(--trace-iout);
+  color: var(--trace-iout);
+  background: rgba(245, 158, 11, 0.12);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
+
+.trace-pill.active[data-trace="vt"] {
+  border-color: var(--trace-vt);
+  color: var(--trace-vt);
+  background: rgba(244, 63, 94, 0.12);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
+}
+
+/* Scope Canvas Screen */
+.scope-screen-wrapper {
+  flex: 1;
+  position: relative;
+  background: #050811;
+  overflow: hidden;
+  min-height: 380px;
+  cursor: crosshair;
+}
+
+#oscilloscopeCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Interactive Crosshair & Cursor Tooltip */
+.scope-cursor-readout {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(11, 16, 30, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.readout-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.readout-label {
+  color: var(--text-muted);
+}
+
+.readout-val {
+  font-weight: 700;
+}
+
+/* Bottom Oscilloscope Scrubber Bar */
+.scope-scrubber-bar {
+  padding: 0.6rem 1rem;
+  background: var(--bg-input);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.scrubber-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.scrubber-slider {
+  flex: 1;
+}
+
+.scrubber-time-val {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  min-width: 65px;
+  text-align: right;
+}

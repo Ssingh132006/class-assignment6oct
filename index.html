@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Power Electronics Virtual Lab - Bridge & Controlled Rectifier Simulator</title>
+  <meta name="description" content="Interactive laboratory simulator to study single-phase and three-phase diode bridge and thyristor phase-controlled rectifiers with live circuit schematics and oscilloscope waveforms.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/circuit.css">
+  <link rel="stylesheet" href="css/oscilloscope.css">
+  <link rel="stylesheet" href="css/metrics.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation & Control Bar -->
+    <header class="top-navbar">
+      <div class="nav-content">
+        <div class="brand-section">
+          <div class="brand-logo-icon">⚡</div>
+          <div class="brand-text">
+            <h1>RECTIFIER LAB <span class="academic-tag">EE / Power Electronics</span></h1>
+            <p>Interactive Bridge & Controlled Converter Studio</p>
+          </div>
+        </div>
+
+        <!-- Animation & Playback Bar -->
+        <div class="header-actions">
+          <div class="playback-controls">
+            <button id="btnStepBack" class="playback-btn" title="Step -15°">⏮</button>
+            <button id="btnPlayPause" class="playback-btn playing" title="Play/Pause Live Simulation">⏸</button>
+            <button id="btnStepForward" class="playback-btn" title="Step +15°">⏭</button>
+            <button id="btnReset" class="playback-btn" title="Reset Phase to 0°">🔄</button>
+            <span id="speedIndicator" class="speed-badge" title="Cycle playback speed">1.0x</span>
+          </div>
+
+          <button id="btnExportReport" class="btn btn-secondary">
+            <span>📥 Export Lab Data (CSV)</span>
+          </button>
+          <button id="btnSnapshotScope" class="btn btn-primary">
+            <span>📷 Save Waveform</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Top Control Hub -->
+      <section class="control-hub" aria-label="Rectifier Controls Hub">
+        <div class="converter-selectors-row">
+          <div class="selector-group-wrapper">
+            <!-- 1. Device Selection: Diode vs Thyristor -->
+            <div class="selector-card">
+              <span class="selector-label">1. Device Type</span>
+              <div class="segmented-control" role="radiogroup">
+                <div class="segmented-option">
+                  <input type="radio" id="devDiode" name="deviceType" value="diode">
+                  <label for="devDiode">Diode Rectifier (Uncontrolled)</label>
+                </div>
+                <div class="segmented-option">
+                  <input type="radio" id="devThyristor" name="deviceType" value="thyristor" checked>
+                  <label for="devThyristor">Thyristor Controlled (Phase-Angle)</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Configuration: Half-Wave vs Full-Wave Bridge -->
+            <div class="selector-card">
+              <span class="selector-label">2. Configuration</span>
+              <div class="segmented-control" role="radiogroup">
+                <div class="segmented-option">
+                  <input type="radio" id="cfgHalf" name="rectConfig" value="half">
+                  <label for="cfgHalf">Half-Wave</label>
+                </div>
+                <div class="segmented-option">
+                  <input type="radio" id="cfgFull" name="rectConfig" value="full" checked>
+                  <label for="cfgFull">Full-Wave Bridge</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Supply Phases: 1-Phase vs 3-Phase -->
+            <div class="selector-card">
+              <span class="selector-label">3. Supply Phase</span>
+              <div class="segmented-control" role="radiogroup">
+                <div class="segmented-option">
+                  <input type="radio" id="phase1" name="phaseSelect" value="1ph" checked>
+                  <label for="phase1">1-Phase (Single Phase)</label>
+                </div>
+                <div class="segmented-option">
+                  <input type="radio" id="phase3" name="phaseSelect" value="3ph">
+                  <label for="phase3">3-Phase (Three Phase)</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Preset Selection Dropdown -->
+          <div class="selector-card" style="min-width: 220px;">
+            <span class="selector-label">Quick Lab Presets</span>
+            <select id="presetDropdown" class="custom-select" aria-label="Select preset configuration">
+              <option value="1ph-full-thyristor">1-Phase Full-Wave Thyristor Bridge</option>
+              <option value="1ph-full-diode">1-Phase Full-Wave Diode Bridge</option>
+              <option value="1ph-half-thyristor">1-Phase Half-Wave Thyristor</option>
+              <option value="1ph-half-diode">1-Phase Half-Wave Diode</option>
+              <option value="3ph-full-thyristor">3-Phase Full-Wave 6-Pulse Thyristor Bridge</option>
+              <option value="3ph-full-diode">3-Phase Full-Wave 6-Pulse Diode Bridge</option>
+              <option value="3ph-half-thyristor">3-Phase Half-Wave 3-Pulse Thyristor</option>
+              <option value="3ph-half-diode">3-Phase Half-Wave 3-Pulse Diode</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Secondary Parameters Toolbar -->
+        <div class="parameters-toolbar">
+          <!-- Firing Angle α Slider (visible when Thyristor selected) -->
+          <div class="slider-control-card" id="alphaControlCard">
+            <div class="slider-header">
+              <span class="slider-label">Firing Angle (α)</span>
+              <span id="alphaValDisplay" class="slider-value-display">45°</span>
+            </div>
+            <div class="slider-input-wrapper">
+              <input type="range" id="alphaSlider" min="0" max="180" step="1" value="45" aria-label="Firing angle alpha">
+            </div>
+            <div class="angle-presets">
+              <button class="preset-chip" data-angle="0">0° (Diode)</button>
+              <button class="preset-chip" data-angle="30">30°</button>
+              <button class="preset-chip active" data-angle="45">45°</button>
+              <button class="preset-chip" data-angle="60">60°</button>
+              <button class="preset-chip" data-angle="90">90° (0V DC)</button>
+              <button class="preset-chip" data-angle="120">120°</button>
+            </div>
+          </div>
+
+          <!-- Load Type Selector -->
+          <div class="slider-control-card">
+            <div class="slider-header">
+              <span class="slider-label">Load Topology</span>
+            </div>
+            <select id="loadSelect" class="custom-select" aria-label="Select load type">
+              <option value="R">Pure Resistive Load (R)</option>
+              <option value="RL" selected>Inductive Load (R - L)</option>
+              <option value="RL_FWD">R - L + Freewheeling Diode (FWD)</option>
+              <option value="RLE">Active DC Load (R - L - E Battery)</option>
+            </select>
+          </div>
+
+          <!-- Supply Voltage RMS Slider -->
+          <div class="slider-control-card">
+            <div class="slider-header">
+              <span class="slider-label">AC Input Voltage (Vrms)</span>
+              <span id="vrmsValDisplay" class="slider-value-display">230 V</span>
+            </div>
+            <div class="slider-input-wrapper">
+              <input type="range" id="vrmsSlider" min="24" max="440" step="2" value="230" aria-label="Input RMS voltage">
+            </div>
+          </div>
+
+          <!-- Frequency & Load Resistance Inputs -->
+          <div class="slider-control-card">
+            <div class="slider-header">
+              <span class="slider-label">Load Resistance (R)</span>
+              <span id="rValDisplay" class="slider-value-display">10 Ω</span>
+            </div>
+            <div class="slider-input-wrapper">
+              <input type="range" id="rSlider" min="2" max="100" step="1" value="10" aria-label="Load resistance">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Simulation Grid (Left: Circuit Schematic | Right: Oscilloscope Waveforms) -->
+      <div class="simulation-grid">
+        <!-- LEFT: Circuit Schematic Card -->
+        <section class="panel-card circuit-container" aria-label="Circuit Schematic Diagram">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <div class="panel-icon">🔌</div>
+              <div>
+                <h2 id="circuitHeaderTitle" class="panel-title">Circuit Schematic</h2>
+                <span id="circuitHeaderSubtitle" class="panel-subtitle">1-Phase Full-Wave Thyristor Bridge</span>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <span id="circuitStateBadge" class="status-badge">
+                <span class="badge-dot"></span>
+                <span id="circuitStateText">Conduction Active</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Interactive Vector SVG Schematic Container -->
+          <div class="circuit-canvas-area" id="circuitCanvasArea">
+            <!-- Dynamically populated by schematics.js -->
+          </div>
+
+          <!-- Conduction State Tracker Bar -->
+          <div class="circuit-status-bar">
+            <div class="conducting-pairs-tracker">
+              <span style="color: var(--text-muted);">Active Devices:</span>
+              <span id="conductingDevicesPill" class="pair-pill">T1, T2</span>
+              <span id="conductionPathDesc" style="color: var(--text-secondary); font-size: 0.75rem;">Source(+) → T1 → Load → T2</span>
+            </div>
+            <div class="circuit-time-tag">
+              <span>Phase: </span><span id="circuitAngleTag">45.0°</span> (ωt)
+            </div>
+          </div>
+
+          <!-- Floating Component Inspector Tooltip -->
+          <div id="componentInspector" class="component-inspector-popover">
+            <div id="inspectorDeviceName" style="font-weight: 700; color: var(--color-accent); margin-bottom: 2px;">T1 (Thyristor)</div>
+            <div id="inspectorDeviceStatus" style="color: #cbd5e1;">State: Forward Conducting</div>
+            <div id="inspectorDeviceVoltage" style="color: var(--text-muted); font-size: 0.75rem;">Drop: ~1.2V | PIV Rating: 325.3V</div>
+          </div>
+        </section>
+
+        <!-- RIGHT: Oscilloscope Waveforms Card -->
+        <section class="panel-card oscilloscope-container" aria-label="Output Waveforms Oscilloscope">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <div class="panel-icon">📈</div>
+              <div>
+                <h2 class="panel-title">Real-Time Oscilloscope Waveforms</h2>
+                <span class="panel-subtitle">Synchronized Multi-Trace Output (2 Cycles / 40ms)</span>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <button id="btnZoomFit" class="btn btn-secondary btn-icon" title="Reset View" style="height: 30px; width: 30px;">
+                🔍
+              </button>
+            </div>
+          </div>
+
+          <!-- Trace Visibility Toggles Legend -->
+          <div class="trace-legend-bar">
+            <div class="trace-toggles">
+              <button class="trace-pill active" data-trace="vin" title="Toggle Input Voltage Trace">
+                <span class="trace-indicator"></span> v_s(t) Input AC
+              </button>
+              <button class="trace-pill active" data-trace="gate" id="traceGateBtn" title="Toggle Gate Firing Pulses">
+                <span class="trace-indicator"></span> i_g(t) Gate Pulses
+              </button>
+              <button class="trace-pill active" data-trace="vout" title="Toggle Output Voltage Trace">
+                <span class="trace-indicator"></span> v_o(t) Rectified Output
+              </button>
+              <button class="trace-pill active" data-trace="iout" title="Toggle Load Current Trace">
+                <span class="trace-indicator"></span> i_o(t) Load Current
+              </button>
+              <button class="trace-pill" data-trace="vt" title="Toggle Device Voltage Drop Trace">
+                <span class="trace-indicator"></span> v_T1(t) PIV Monitor
+              </button>
+            </div>
+          </div>
+
+          <!-- Oscilloscope Screen Canvas -->
+          <div class="scope-screen-wrapper">
+            <canvas id="oscilloscopeCanvas"></canvas>
+
+            <!-- Cursor Inspection Readout Overlay -->
+            <div id="scopeReadout" class="scope-cursor-readout" style="display: none;">
+              <div class="readout-row"><span class="readout-label">Angle (ωt):</span><span id="readoutAngle" class="readout-val">0.0°</span></div>
+              <div class="readout-row"><span class="readout-label">Time (t):</span><span id="readoutTime" class="readout-val">0.0 ms</span></div>
+              <div class="readout-row"><span class="readout-label" style="color: var(--trace-vin);">v_s(t):</span><span id="readoutVin" class="readout-val">0.0 V</span></div>
+              <div class="readout-row"><span class="readout-label" style="color: var(--trace-vout);">v_o(t):</span><span id="readoutVout" class="readout-val">0.0 V</span></div>
+              <div class="readout-row"><span class="readout-label" style="color: var(--trace-iout);">i_o(t):</span><span id="readoutIout" class="readout-val">0.0 A</span></div>
+            </div>
+          </div>
+
+          <!-- Interactive Time Scrubber Slider -->
+          <div class="scope-scrubber-bar">
+            <span class="scrubber-label">Timeline Scrubber (ωt):</span>
+            <input type="range" id="timeScrubber" class="scrubber-slider" min="0" max="720" step="1" value="45" aria-label="Simulation timeline scrubber">
+            <span id="scrubberTimeDisplay" class="scrubber-time-val">45° (2.5ms)</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- Comprehensive Analysis, Theory & Metrics Panel -->
+      <section class="analysis-panel" aria-label="Comprehensive Rectifier Analysis">
+        <!-- Tab Navigation Header -->
+        <div class="analysis-tabs-header">
+          <button class="tab-btn active" data-tab="tab-metrics">📊 Performance Metrics</button>
+          <button class="tab-btn" data-tab="tab-theory">📐 Mathematical Formulas & Theory</button>
+          <button class="tab-btn" data-tab="tab-harmonics">📶 Harmonic Spectrum (FFT)</button>
+          <button class="tab-btn" data-tab="tab-intervals">📋 Conduction Intervals Guide</button>
+        </div>
+
+        <!-- Tab 1: Performance Metrics Grid -->
+        <div id="tab-metrics" class="tab-content active">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Average DC Voltage</span>
+                <span class="metric-symbol">V_dc</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricVdc" class="metric-value">146.4</span>
+                <span class="metric-unit">V</span>
+              </div>
+              <span class="metric-formula-subtext" id="metricVdcFormula">Theoretical: 146.4 V</span>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">RMS Output Voltage</span>
+                <span class="metric-symbol">V_rms</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricVrms" class="metric-value">229.8</span>
+                <span class="metric-unit">V</span>
+              </div>
+              <span class="metric-formula-subtext">Effective RMS heating</span>
+            </div>
+
+            <div class="metric-card success">
+              <div class="metric-header">
+                <span class="metric-title">Average DC Current</span>
+                <span class="metric-symbol">I_dc</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricIdc" class="metric-value">14.6</span>
+                <span class="metric-unit">A</span>
+              </div>
+              <span class="metric-formula-subtext">V_dc / R load</span>
+            </div>
+
+            <div class="metric-card success">
+              <div class="metric-header">
+                <span class="metric-title">RMS Output Current</span>
+                <span class="metric-symbol">I_rms</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricIrms" class="metric-value">16.2</span>
+                <span class="metric-unit">A</span>
+              </div>
+              <span class="metric-formula-subtext">Current dissipation</span>
+            </div>
+
+            <div class="metric-card warning">
+              <div class="metric-header">
+                <span class="metric-title">Ripple Factor</span>
+                <span class="metric-symbol">RF</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricRf" class="metric-value">0.483</span>
+                <span class="metric-unit">-</span>
+              </div>
+              <span class="metric-formula-subtext">√(FF² - 1)</span>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Form Factor</span>
+                <span class="metric-symbol">FF</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricFf" class="metric-value">1.11</span>
+                <span class="metric-unit">-</span>
+              </div>
+              <span class="metric-formula-subtext">V_rms / V_dc</span>
+            </div>
+
+            <div class="metric-card purple">
+              <div class="metric-header">
+                <span class="metric-title">Rectification Efficiency</span>
+                <span class="metric-symbol">η</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricEff" class="metric-value">81.2</span>
+                <span class="metric-unit">%</span>
+              </div>
+              <span class="metric-formula-subtext">P_dc / P_ac</span>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">Peak Inverse Voltage</span>
+                <span class="metric-symbol">PIV</span>
+              </div>
+              <div class="metric-value-row">
+                <span id="metricPiv" class="metric-value">325.3</span>
+                <span class="metric-unit">V</span>
+              </div>
+              <span class="metric-formula-subtext">Max reverse device stress</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Mathematical Formulas & Theory -->
+        <div id="tab-theory" class="tab-content">
+          <div class="formula-cards-container">
+            <div class="formula-card">
+              <h3 class="formula-card-title">Average Output Voltage Formula</h3>
+              <div class="formula-display" id="theoryVdcEq">
+                V_{dc} = \frac{2 V_m}{\pi} \cos\alpha
+              </div>
+              <p class="formula-notes" id="theoryVdcNotes">
+                For a 1-phase fully controlled bridge with highly inductive continuous load. Firing angle α delays conduction, enabling voltage control from +2Vm/π down to negative values during regenerative inversion.
+              </p>
+            </div>
+
+            <div class="formula-card">
+              <h3 class="formula-card-title">RMS Output Voltage Formula</h3>
+              <div class="formula-display" id="theoryVrmsEq">
+                V_{rms} = \frac{V_m}{\sqrt{2}} = V_{s,rms}
+              </div>
+              <p class="formula-notes" id="theoryVrmsNotes">
+                Under continuous conduction, the load receives the full AC waveform rectified; therefore the RMS value equals the supply RMS voltage.
+              </p>
+            </div>
+
+            <div class="formula-card">
+              <h3 class="formula-card-title">Peak Inverse Voltage (PIV) & Commutation</h3>
+              <div class="formula-display" id="theoryPivEq">
+                PIV = V_m = \sqrt{2} \cdot V_{rms}
+              </div>
+              <p class="formula-notes" id="theoryPivNotes">
+                Each SCR or Diode must withstand the full peak supply voltage when reverse biased during the non-conducting half-cycle.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Harmonic Spectrum (FFT) -->
+        <div id="tab-harmonics" class="tab-content">
+          <div class="harmonics-container">
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              Discrete Fourier Transform (DFT) amplitude breakdown of the output rectified voltage showing the DC component and ripple harmonic orders (f, 2f, 3f, 4f, 6f, ...):
+            </p>
+            <canvas id="harmonicsCanvas" class="harmonics-chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Tab 4: Conduction Intervals Guide Table -->
+        <div id="tab-intervals" class="tab-content">
+          <div class="interval-table-wrapper">
+            <table class="interval-table">
+              <thead>
+                <tr>
+                  <th>Phase Interval (ωt)</th>
+                  <th>Conducting Devices</th>
+                  <th>Output Voltage v_o(t)</th>
+                  <th>Circuit Operation & Conduction Path</th>
+                </tr>
+              </thead>
+              <tbody id="intervalsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div>
+        <span>Power Electronics Virtual Lab</span> • 
+        <span>IIT Kharagpur Class Assignment</span> • 
+        <span>Author: <strong style="color: #fff;">Shreyas Singh</strong></span>
+      </div>
+      <div>
+        <span>Deploy ready for Vercel • Source: </span>
+        <a class="footer-link" href="https://github.com/Ssingh132006/class-assignment6oct" target="_blank" rel="noopener">github.com/Ssingh132006/class-assignment6oct</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Logic Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

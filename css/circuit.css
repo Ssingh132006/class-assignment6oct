@@ -1,0 +1,249 @@
+/* Circuit Schematic Container */
+.circuit-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 520px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+
+.circuit-canvas-area {
+  flex: 1;
+  min-height: 400px;
+  background: radial-gradient(circle at center, #111728 0%, #0a0d17 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Subtle schematic grid background */
+.circuit-canvas-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+.schematic-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 440px;
+  user-select: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+/* SVG Circuit Wires & Paths */
+.wire-base {
+  stroke: #334155;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.15s ease;
+}
+
+.wire-active {
+  stroke: var(--color-accent);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.8));
+  stroke-dasharray: 6 4;
+  animation: flowCurrent 0.8s linear infinite;
+}
+
+.wire-active-return {
+  stroke: #38bdf8;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+  stroke-dasharray: 6 4;
+  animation: flowCurrentReverse 0.8s linear infinite;
+}
+
+@keyframes flowCurrent {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes flowCurrentReverse {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 20;
+  }
+}
+
+/* Power Electronic Components */
+.device-group {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.device-group:hover {
+  transform: scale(1.05);
+}
+
+.device-body {
+  stroke: #475569;
+  stroke-width: 2;
+  fill: #1e293b;
+  transition: all 0.2s ease;
+}
+
+.device-gate {
+  stroke: #64748b;
+  stroke-width: 2;
+  fill: none;
+}
+
+/* Conducting State */
+.device-conducting .device-body {
+  stroke: var(--color-emerald);
+  fill: rgba(16, 185, 129, 0.25);
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.9));
+}
+
+.device-conducting .device-symbol {
+  stroke: #34d399;
+  fill: #10b981;
+}
+
+.device-conducting .device-label {
+  fill: #34d399;
+  font-weight: 700;
+}
+
+/* Gate Trigger Fire Pulse */
+.gate-pulse-firing {
+  stroke: var(--color-purple);
+  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 1));
+  animation: gateFireFlash 0.3s ease-out;
+}
+
+@keyframes gateFireFlash {
+  0% { stroke-width: 2; }
+  50% { stroke-width: 5; }
+  100% { stroke-width: 2; }
+}
+
+/* Blocking State */
+.device-blocking .device-body {
+  stroke: #64748b;
+  fill: #0f172a;
+}
+
+.device-blocking .device-symbol {
+  stroke: #64748b;
+  fill: none;
+}
+
+/* Device Labeling */
+.device-label {
+  fill: #94a3b8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.source-label {
+  fill: var(--color-accent);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.load-box {
+  stroke: #475569;
+  stroke-width: 2;
+  fill: rgba(30, 41, 59, 0.6);
+  rx: 6;
+}
+
+.load-text {
+  fill: #cbd5e1;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+/* Live Conduction Flow Indicator bar */
+.circuit-status-bar {
+  padding: 0.75rem 1.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border-color);
+}
+
+.conducting-pairs-tracker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+}
+
+.pair-pill {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--color-emerald);
+}
+
+.circuit-time-tag {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.circuit-time-tag span {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Interactive Component Details Tooltip/Drawer */
+.component-inspector-popover {
+  position: absolute;
+  bottom: 50px;
+  left: 15px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.2s ease;
+  z-index: 20;
+}
+
+.component-inspector-popover.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

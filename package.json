@@ -1,0 +1,19 @@
+{
+  "name": "rectifier-studio",
+  "version": "1.0.0",
+  "description": "Interactive Bridge Rectifier & Controlled Converter Simulator for Power Electronics",
+  "scripts": {
+    "dev": "python3 -m http.server 5173",
+    "start": "python3 -m http.server 3000"
+  },
+  "keywords": [
+    "rectifier",
+    "power-electronics",
+    "thyristor",
+    "diode-bridge",
+    "circuit-simulation",
+    "oscilloscope"
+  ],
+  "author": "Shreyas Singh",
+  "license": "MIT"
+}
