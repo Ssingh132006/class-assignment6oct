@@ -358,6 +358,41 @@ class RectifierStudioApp {
     return `${this.state.phase}-${this.state.rectType}-${this.state.device}`;
   }
 
+  renderMath(element, latex) {
+    if (!element || !latex) return;
+
+    if (window.katex) {
+      try {
+        window.katex.render(latex, element, { displayMode: true, throwOnError: false });
+        return;
+      } catch (err) {
+        console.warn('KaTeX render error:', err);
+      }
+    }
+
+    // High quality HTML mathematical fallback
+    let html = latex
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<span class="math-frac"><span class="math-num">$1</span><span class="math-den">$2</span></span>')
+      .replace(/\\sqrt\{([^}]+)\}/g, '<span class="math-sqrt">√<span class="math-radicand">$1</span></span>')
+      .replace(/\\sqrt(\d+)/g, '<span class="math-sqrt">√<span class="math-radicand">$1</span></span>')
+      .replace(/\\cos/g, 'cos')
+      .replace(/\\sin/g, 'sin')
+      .replace(/\\alpha/g, 'α')
+      .replace(/\\pi/g, 'π')
+      .replace(/\\approx/g, '≈')
+      .replace(/\\cdot/g, '·')
+      .replace(/\\quad/g, ' &nbsp; ')
+      .replace(/V_\{dc\}/g, 'V<sub>dc</sub>')
+      .replace(/V_\{rms\}/g, 'V<sub>rms</sub>')
+      .replace(/V_\{m\}/g, 'V<sub>m</sub>')
+      .replace(/V_m/g, 'V<sub>m</sub>')
+      .replace(/V_\{LL,peak\}/g, 'V<sub>LL,peak</sub>')
+      .replace(/V_\{LL,rms\}/g, 'V<sub>LL,rms</sub>')
+      .replace(/\\text\{([^}]+)\}/g, '<span style="font-size:0.85em;color:#94a3b8;margin-left:4px;">($1)</span>');
+
+    element.innerHTML = `<span class="math-eq">${html}</span>`;
+  }
+
   updateAll() {
     const configKey = this.getConfigKey();
     const info = RECTIFIER_CONFIGS[configKey] || RECTIFIER_CONFIGS['1ph-full-thyristor'];
@@ -366,23 +401,33 @@ class RectifierStudioApp {
     this.circuitHeaderTitle.textContent = info.name;
     this.circuitHeaderSubtitle = `${info.type} • Pulses: ${info.pulses} • Load: ${this.state.load}`;
 
+    // Update input trace label based on 1-Phase vs 3-Phase
+    const vinPill = document.querySelector('.trace-pill[data-trace="vin"]');
+    if (vinPill) {
+      if (this.state.phase === '3ph') {
+        vinPill.innerHTML = '<span class="trace-indicator"></span> v_A, v_B, v_C (3-Phase)';
+      } else {
+        vinPill.innerHTML = '<span class="trace-indicator"></span> v_s(t) Input AC';
+      }
+    }
+
     // Render new schematic SVG
     this.schematic.renderSchematic(this.state);
 
-    // Update theory & equations
-    this.theoryVdcEq.textContent = info.vdcFormula;
+    // Update theory & equations with proper mathematical formatting
+    this.renderMath(this.theoryVdcEq, info.vdcFormula);
     this.theoryVdcNotes.textContent = info.description;
-    this.theoryVrmsEq.textContent = info.vrmsFormula;
-    this.theoryPivEq.textContent = `PIV = ${info.pivFormula}`;
+    this.renderMath(this.theoryVrmsEq, info.vrmsFormula);
+    this.renderMath(this.theoryPivEq, `\\text{PIV} = ${info.pivFormula}`);
 
     // Populate intervals table
     this.intervalsTableBody.innerHTML = '';
     info.intervals.forEach(row => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="color: var(--color-accent);">${row.range}</td>
+        <td style="color: var(--color-accent); font-weight: 600;">${row.range}</td>
         <td style="color: var(--color-emerald); font-weight: 600;">${row.state}</td>
-        <td style="color: #38bdf8;">${row.vout}</td>
+        <td style="color: #38bdf8; font-weight: 600;">${row.vout}</td>
         <td>${row.comment}</td>
       `;
       this.intervalsTableBody.appendChild(tr);
@@ -410,6 +455,7 @@ class RectifierStudioApp {
     this.metricVdcFormula.textContent = `Formula: ${analyticalVdc} V`;
 
     // Render oscilloscope & harmonics
+    this.oscilloscope.setIs3Phase(this.state.phase === '3ph');
     this.oscilloscope.render(this.currentSeries, this.currentMetrics);
     this.harmonics.render(this.currentSeries.vout);
 
