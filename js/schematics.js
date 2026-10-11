@@ -38,6 +38,9 @@ export class SchematicRenderer {
 
     return `
       <g id="dev-${id}" class="device-group" data-device-id="${id}" data-device-type="${isThyristor ? 'Thyristor (SCR)' : 'Diode'}">
+        <!-- Generous transparent hit-box for rock-solid hover stability -->
+        <rect x="${x - 22}" y="${triTop - 8}" width="44" height="${triBot - triTop + 16}" class="device-hitbox" />
+
         <!-- Connecting Leads -->
         <line x1="${x}" y1="${yBottom}" x2="${x}" y2="${triBot}" class="wire-base" />
         <line x1="${x}" y1="${triTop}" x2="${x}" y2="${yTop}" class="wire-base" />
@@ -76,6 +79,9 @@ export class SchematicRenderer {
 
     return `
       <g id="dev-${id}" class="device-group" data-device-id="${id}" data-device-type="${isThyristor ? 'Thyristor (SCR)' : 'Diode'}">
+        <!-- Generous transparent hit-box for rock-solid hover stability -->
+        <rect x="${triLeft - 8}" y="${y - 20}" width="${triRight - triLeft + 16}" height="40" class="device-hitbox" />
+
         <!-- Connecting Leads -->
         <line x1="${xLeft}" y1="${y}" x2="${triLeft}" y2="${y}" class="wire-base" />
         <line x1="${triRight}" y1="${y}" x2="${xRight}" y2="${y}" class="wire-base" />

@@ -92,24 +92,69 @@
 /* Power Electronic Components */
 .device-group {
   cursor: pointer;
-  transition: transform 0.15s ease;
 }
 
-.device-group:hover {
-  transform: scale(1.05);
+.device-hitbox {
+  fill: transparent;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.device-group line.wire-base {
+  pointer-events: none;
+}
+
+.junction-dot {
+  pointer-events: none;
+}
+
+.wire-base,
+.wire-active {
+  pointer-events: none;
+}
+
+/* Stable Glow on Hover without ANY Geometric Shift */
+.device-group:hover .device-body {
+  stroke: var(--color-accent);
+  stroke-width: 2.8;
+  fill: rgba(0, 242, 254, 0.25);
+  filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.85));
+}
+
+.device-group:hover .device-symbol {
+  stroke: var(--color-accent);
+  fill: rgba(0, 242, 254, 0.35);
+}
+
+.device-group:hover .device-label {
+  fill: var(--color-accent);
+  font-weight: 700;
+  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.6));
+}
+
+.device-group:hover .device-gate {
+  stroke: #e879f9;
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 8px rgba(232, 121, 249, 0.9));
+}
+
+.device-group:hover .gate-tag {
+  fill: #f472b6;
+  font-weight: 800;
 }
 
 .device-body {
   stroke: #475569;
   stroke-width: 2;
   fill: #1e293b;
-  transition: all 0.2s ease;
+  transition: stroke 0.15s ease, fill 0.15s ease, filter 0.15s ease;
 }
 
 .device-gate {
   stroke: #64748b;
   stroke-width: 2;
   fill: none;
+  transition: stroke 0.15s ease, filter 0.15s ease;
 }
 
 /* Conducting State */
@@ -127,6 +172,13 @@
 .device-conducting .device-label {
   fill: #34d399;
   font-weight: 700;
+}
+
+.device-conducting:hover .device-body {
+  stroke: #34d399;
+  stroke-width: 2.8;
+  fill: rgba(16, 185, 129, 0.35);
+  filter: drop-shadow(0 0 14px rgba(52, 211, 153, 1));
 }
 
 /* Gate Trigger Fire Pulse */

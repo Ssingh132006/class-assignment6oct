@@ -255,8 +255,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 0 14px rgba(0, 242, 254, 0.9);
+  box-shadow: 0 0 16px rgba(0, 242, 254, 1);
+  background: #e0f2fe;
 }
 
 /* Quick Angle Preset Pills */
