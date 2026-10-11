@@ -83,35 +83,73 @@ export class OscilloscopeRenderer {
     const h = this.height;
 
     // Dark Phosphor Screen Background
-    ctx.fillStyle = '#050811';
+    ctx.fillStyle = '#060913';
     ctx.fillRect(0, 0, w, h);
 
-    // Minor grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    // Visible, Very Dim Oscilloscope Graticule Grid (Tektronix/Keysight style)
+    const cols = 16; // 45° per division over 720°
+    const rows = 10; // Clean vertical division steps
+
+    // 1. Dim Minor Grid Lines (Dotted)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.10)';
     ctx.lineWidth = 1;
+    ctx.setLineDash([1, 3]);
     ctx.beginPath();
-    const cols = 24;
-    const rows = 12;
-    for (let i = 0; i <= cols; i++) {
+    for (let i = 1; i < cols; i++) {
       const x = (i / cols) * w;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, h);
     }
-    for (let j = 0; j <= rows; j++) {
+    for (let j = 1; j < rows; j++) {
       const y = (j / rows) * h;
       ctx.moveTo(0, y);
       ctx.lineTo(w, y);
     }
     ctx.stroke();
+    ctx.restore();
 
-    // Center Ground / Zero Volt reference line
+    // 2. Dim Major Graticule Lines (Solid 1px subtle grid)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    // Major 90° intervals (every 2 cols = 90°, 180°, 270°, 360°, 450°, 540°, 630°)
+    for (let i = 0; i <= cols; i += 2) {
+      const x = (i / cols) * w;
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+    }
+    // Major voltage rows
+    for (let j = 0; j <= rows; j += 2) {
+      const y = (j / rows) * h;
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Center Ground / Zero Volt reference line (Prominent axis with tick marks)
     const zeroY = h * 0.52;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.save();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.38)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, zeroY);
     ctx.lineTo(w, zeroY);
     ctx.stroke();
+
+    // Small tick marks along the 0V ground axis
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.30)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= cols; i++) {
+      const x = (i / cols) * w;
+      ctx.moveTo(x, zeroY - 3);
+      ctx.lineTo(x, zeroY + 3);
+    }
+    ctx.stroke();
+    ctx.restore();
 
     // Voltage division markings on left
     ctx.fillStyle = '#94a3b8';

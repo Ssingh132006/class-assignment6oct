@@ -444,12 +444,13 @@ export class SchematicRenderer {
     // Leg 3 at x = 340 (T5 Top, T2 Bottom) -> Phase C
     // DC+ rail at y = 70
     // DC- rail at y = 310
-    // Upper devices: yTop = 70, yBottom = 175
-    // Lower devices: yTop = 205, yBottom = 310
-    // Midpoint wire space: y = 175 to 205 (open gap)
-    // Phase A enters Leg 1 at y = 180
-    // Phase B enters Leg 2 at y = 190 (jumper over Leg 1)
-    // Phase C enters Leg 3 at y = 200 (jumpers over Leg 1 and Leg 2)
+    // Upper devices: yTop = 70, yBottom = 155
+    // Lower devices: yTop = 225, yBottom = 310
+    // Midpoint wire space: y = 155 to 225 (generous 70px open gap)
+    // Phase A enters Leg 1 at y = 168
+    // Phase B enters Leg 2 at y = 190 (jumper over Leg 1 at x=160)
+    // Phase C enters Leg 3 at y = 212 (jumpers over Leg 1 at x=160 and Leg 2 at x=250)
+    // Vertical clearance between wires is 22px, arc peak clearance is 14px!
 
     return `
       <!-- 3-Phase Input Terminals on Left -->
@@ -467,25 +468,25 @@ export class SchematicRenderer {
         <text x="0" y="164" fill="#3b82f6" font-size="10" font-weight="bold" text-anchor="middle">C</text>
       </g>
 
-      <!-- Phase Input Lines to Midpoints (Clear of device bodies) -->
-      <!-- Phase A: from (59, 130) down to y=180, straight into Leg 1 Midpoint (160, 180) -->
-      <path id="wire-in-a" d="M 59,130 L 100,130 L 100,180 L 160,180" class="wire-base" />
+      <!-- Phase Input Lines to Midpoints (Generously spaced, perfectly clear of all devices) -->
+      <!-- Phase A: from (59, 130) to y=168, straight into Leg 1 Midpoint (160, 168) -->
+      <path id="wire-in-a" d="M 59,130 L 100,130 L 100,168 L 160,168" class="wire-base" />
 
       <!-- Phase B: from (59, 190), jumps over Leg 1 at x=160 into Leg 2 Midpoint (250, 190) -->
       <path id="wire-in-b" d="M 59,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190" class="wire-base" />
 
-      <!-- Phase C: from (59, 250) up to y=200, jumps over Leg 1 and Leg 2 into Leg 3 Midpoint (340, 200) -->
-      <path id="wire-in-c" d="M 59,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200" class="wire-base" />
+      <!-- Phase C: from (59, 250) up to y=212, jumps over Leg 1 and Leg 2 into Leg 3 Midpoint (340, 212) -->
+      <path id="wire-in-c" d="M 59,250 L 100,250 L 100,212 L 152,212 A 8 8 0 0 1 168,212 L 242,212 A 8 8 0 0 1 258,212 L 340,212" class="wire-base" />
 
       <!-- Midpoint Vertical Connecting Wires in Legs -->
-      <line x1="160" y1="175" x2="160" y2="205" class="wire-base" />
-      <line x1="250" y1="175" x2="250" y2="205" class="wire-base" />
-      <line x1="340" y1="175" x2="340" y2="205" class="wire-base" />
+      <line x1="160" y1="155" x2="160" y2="225" class="wire-base" />
+      <line x1="250" y1="155" x2="250" y2="225" class="wire-base" />
+      <line x1="340" y1="155" x2="340" y2="225" class="wire-base" />
 
       <!-- Midpoint Junction Dots -->
-      ${this.dot(160, 180)}
+      ${this.dot(160, 168)}
       ${this.dot(250, 190)}
-      ${this.dot(340, 200)}
+      ${this.dot(340, 212)}
 
       <!-- TOP DC POSITIVE RAIL (y = 70) -->
       <line x1="160" y1="70" x2="450" y2="70" class="wire-base" id="rail-dc-pos" />
@@ -502,22 +503,22 @@ export class SchematicRenderer {
       ${this.dot(340, 310)}
 
       <!-- ================= LEG 1: Phase A (x = 160) ================= -->
-      <!-- T1 (Top): points UP from midpoint 175 to top rail 70 -->
-      ${this.verticalDevice(`${t}1`, `${t}1`, 160, 70, 175, isThy)}
-      <!-- T4 (Bottom): points UP from bottom rail 310 to midpoint 205 -->
-      ${this.verticalDevice(`${t}4`, `${t}4`, 160, 205, 310, isThy)}
+      <!-- T1 (Top): points UP from midpoint 155 to top rail 70 -->
+      ${this.verticalDevice(`${t}1`, `${t}1`, 160, 70, 155, isThy)}
+      <!-- T4 (Bottom): points UP from bottom rail 310 to midpoint 225 -->
+      ${this.verticalDevice(`${t}4`, `${t}4`, 160, 225, 310, isThy)}
 
       <!-- ================= LEG 2: Phase B (x = 250) ================= -->
-      <!-- T3 (Top): points UP from midpoint 175 to top rail 70 -->
-      ${this.verticalDevice(`${t}3`, `${t}3`, 250, 70, 175, isThy)}
-      <!-- T6 (Bottom): points UP from bottom rail 310 to midpoint 205 -->
-      ${this.verticalDevice(`${t}6`, `${t}6`, 250, 205, 310, isThy)}
+      <!-- T3 (Top): points UP from midpoint 155 to top rail 70 -->
+      ${this.verticalDevice(`${t}3`, `${t}3`, 250, 70, 155, isThy)}
+      <!-- T6 (Bottom): points UP from bottom rail 310 to midpoint 225 -->
+      ${this.verticalDevice(`${t}6`, `${t}6`, 250, 225, 310, isThy)}
 
       <!-- ================= LEG 3: Phase C (x = 340) ================= -->
-      <!-- T5 (Top): points UP from midpoint 175 to top rail 70 -->
-      ${this.verticalDevice(`${t}5`, `${t}5`, 340, 70, 175, isThy)}
-      <!-- T2 (Bottom): points UP from bottom rail 310 to midpoint 205 -->
-      ${this.verticalDevice(`${t}2`, `${t}2`, 340, 205, 310, isThy)}
+      <!-- T5 (Top): points UP from midpoint 155 to top rail 70 -->
+      ${this.verticalDevice(`${t}5`, `${t}5`, 340, 70, 155, isThy)}
+      <!-- T2 (Bottom): points UP from bottom rail 310 to midpoint 225 -->
+      ${this.verticalDevice(`${t}2`, `${t}2`, 340, 225, 310, isThy)}
 
       <!-- Optional Freewheeling Diode at x = 395 -->
       ${hasFWD ? `
@@ -689,61 +690,61 @@ export class SchematicRenderer {
       // T1 (Phase A+) & T2 (Phase C-)
       if (hasT1 && hasT2) {
         return [
-          'M 64,130 L 100,130 L 100,180 L 160,180 L 160,120',
-          'M 160,100 L 160,70 L 450,70',
+          'M 64,130 L 100,130 L 100,168 L 160,168 L 160,123',
+          'M 160,103 L 160,70 L 450,70',
           ...loadSegs,
-          'M 450,310 L 340,310 L 340,290',
-          'M 340,270 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250'
+          'M 450,310 L 340,310 L 340,278',
+          'M 340,258 L 340,212 L 258,212 A 8 8 0 0 0 242,212 L 168,212 A 8 8 0 0 0 152,212 L 100,212 L 100,250 L 64,250'
         ].join(' ');
       }
       // T1 (Phase A+) & T6 (Phase B-)
       if (hasT1 && hasT6) {
         return [
-          'M 64,130 L 100,130 L 100,180 L 160,180 L 160,120',
-          'M 160,100 L 160,70 L 450,70',
+          'M 64,130 L 100,130 L 100,168 L 160,168 L 160,123',
+          'M 160,103 L 160,70 L 450,70',
           ...loadSegs,
-          'M 450,310 L 250,310 L 250,290',
-          'M 250,270 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190'
+          'M 450,310 L 250,310 L 250,278',
+          'M 250,258 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190'
         ].join(' ');
       }
       // T3 (Phase B+) & T2 (Phase C-)
       if (hasT3 && hasT2) {
         return [
-          'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,120',
-          'M 250,100 L 250,70 L 450,70',
+          'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,123',
+          'M 250,103 L 250,70 L 450,70',
           ...loadSegs,
-          'M 450,310 L 340,310 L 340,290',
-          'M 340,270 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250'
+          'M 450,310 L 340,310 L 340,278',
+          'M 340,258 L 340,212 L 258,212 A 8 8 0 0 0 242,212 L 168,212 A 8 8 0 0 0 152,212 L 100,212 L 100,250 L 64,250'
         ].join(' ');
       }
       // T3 (Phase B+) & T4 (Phase A-)
       if (hasT3 && hasT4) {
         return [
-          'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,120',
-          'M 250,100 L 250,70 L 450,70',
+          'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,123',
+          'M 250,103 L 250,70 L 450,70',
           ...loadSegs,
-          'M 450,310 L 160,310 L 160,290',
-          'M 160,270 L 160,180 L 100,180 L 100,130 L 64,130'
+          'M 450,310 L 160,310 L 160,278',
+          'M 160,258 L 160,168 L 100,168 L 100,130 L 64,130'
         ].join(' ');
       }
       // T5 (Phase C+) & T4 (Phase A-)
       if (hasT5 && hasT4) {
         return [
-          'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,120',
-          'M 340,100 L 340,70 L 450,70',
+          'M 64,250 L 100,250 L 100,212 L 152,212 A 8 8 0 0 1 168,212 L 242,212 A 8 8 0 0 1 258,212 L 340,212 L 340,123',
+          'M 340,103 L 340,70 L 450,70',
           ...loadSegs,
-          'M 450,310 L 160,310 L 160,290',
-          'M 160,270 L 160,180 L 100,180 L 100,130 L 64,130'
+          'M 450,310 L 160,310 L 160,278',
+          'M 160,258 L 160,168 L 100,168 L 100,130 L 64,130'
         ].join(' ');
       }
       // T5 (Phase C+) & T6 (Phase B-)
       if (hasT5 && hasT6) {
         return [
-          'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,120',
-          'M 340,100 L 340,70 L 450,70',
+          'M 64,250 L 100,250 L 100,212 L 152,212 A 8 8 0 0 1 168,212 L 242,212 A 8 8 0 0 1 258,212 L 340,212 L 340,123',
+          'M 340,103 L 340,70 L 450,70',
           ...loadSegs,
-          'M 450,310 L 250,310 L 250,290',
-          'M 250,270 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190'
+          'M 450,310 L 250,310 L 250,278',
+          'M 250,258 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190'
         ].join(' ');
       }
     }

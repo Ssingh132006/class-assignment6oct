@@ -345,29 +345,80 @@ export class MathEngine {
     if (this.load === 'R') {
       iout = Math.max(0, vout / this.R);
     } else if (isRL) {
-      // Textbook standard for R-L / highly inductive load:
-      // Load current is constant, ripple-free DC (clean horizontal straight line)
       const vdc = this.getAnalyticalVdc();
       const idc = Math.max(0, (vdc - this.E) / this.R);
+      const omegaL = this.getOmega() * this.L;
+      const Z = Math.sqrt(this.R * this.R + Math.pow(omegaL, 2));
+      const phi = Math.atan(omegaL / this.R);
+      const tanPhi = Math.tan(phi);
 
-      if (!is3ph && !isFull && !hasFWD) {
-        // 1-Phase Half-Wave without FWD is inherently discontinuous
+      if (!is3ph && !isFull) {
+        // --- 1-PHASE HALF-WAVE (Inherently discontinuous) ---
         const betaDeg = this.getExtinctionBeta(alphaDeg);
-        if (deg >= alphaDeg && deg < betaDeg) {
-          const thetaLocal = (deg - alphaDeg) * DEG2RAD;
-          const thetaAbs = deg * DEG2RAD;
-          const omegaL = this.getOmega() * this.L;
-          const Z = Math.sqrt(this.R * this.R + Math.pow(omegaL, 2));
-          const phi = Math.atan(omegaL / this.R);
-          const tanPhi = Math.tan(phi);
-          iout = Math.max(0, (Vm / Z) * (Math.sin(thetaAbs - phi) - Math.sin(alphaRad - phi) * Math.exp(-thetaLocal / tanPhi)));
+        if (hasFWD) {
+          // With FWD: rises while T1 conducts [alpha, 180], decays exponentially while FWD conducts [180, beta]
+          if (deg >= alphaDeg && deg < 180) {
+            const thetaLocal = (deg - alphaDeg) * DEG2RAD;
+            const thetaAbs = deg * DEG2RAD;
+            iout = Math.max(0, (Vm / Z) * (Math.sin(thetaAbs - phi) - Math.sin(alphaRad - phi) * Math.exp(-thetaLocal / tanPhi)));
+          } else if (deg >= 180 && deg < betaDeg) {
+            const decayDeg = deg - 180;
+            const i180 = (Vm / Z) * (Math.sin(Math.PI - phi) - Math.sin(alphaRad - phi) * Math.exp(-((180 - alphaDeg) * DEG2RAD) / tanPhi));
+            iout = Math.max(0, i180) * Math.exp(-(decayDeg * DEG2RAD) / tanPhi);
+          } else {
+            iout = 0; // Current completely extinguished when blocking
+          }
         } else {
-          iout = 0;
+          // Without FWD: conducts until extinction angle beta
+          if (deg >= alphaDeg && deg < betaDeg) {
+            const thetaLocal = (deg - alphaDeg) * DEG2RAD;
+            const thetaAbs = deg * DEG2RAD;
+            iout = Math.max(0, (Vm / Z) * (Math.sin(thetaAbs - phi) - Math.sin(alphaRad - phi) * Math.exp(-thetaLocal / tanPhi)));
+          } else {
+            iout = 0; // Extinguished
+          }
+        }
+      } else if (!is3ph && isFull) {
+        // --- 1-PHASE FULL-WAVE BRIDGE ---
+        if (hasFWD) {
+          // With FWD: rises while AC supply powers load, decays exponentially during freewheeling intervals
+          const rippleAmp = Math.min(idc * 0.15, (0.15 * Vm) / Z);
+          if ((deg >= alphaDeg && deg < 180) || (deg >= 180 + alphaDeg && deg < 360)) {
+            const relDeg = deg < 180 ? (deg - alphaDeg) / (180 - alphaDeg) : (deg - (180 + alphaDeg)) / (180 - alphaDeg);
+            iout = Math.max(0.05, idc - rippleAmp + 2 * rippleAmp * relDeg);
+          } else {
+            // Freewheeling interval [180, 180+alpha] or [0, alpha]
+            const relDeg = deg < 180 ? deg / Math.max(1, alphaDeg) : (deg - 180) / Math.max(1, alphaDeg);
+            iout = Math.max(0.05, idc + rippleAmp - 2 * rippleAmp * relDeg);
+          }
+        } else {
+          // Without FWD (Continuous Conduction Mode as shown in textbook reference):
+          // Current ramps up while v_o > 0, and ramps down while v_o < 0 (inductor discharging)
+          const rippleAmp = idc > 0.1 ? Math.min(idc * 0.18, (0.22 * Vm) / Z) : 0;
+          let r = 0;
+          if (deg >= alphaDeg && deg < 180) {
+            const u = (deg - alphaDeg) / Math.max(1, 180 - alphaDeg);
+            r = -rippleAmp + 2 * rippleAmp * u;
+          } else if (deg >= 180 && deg < 180 + alphaDeg) {
+            const u = (deg - 180) / Math.max(1, alphaDeg);
+            r = rippleAmp - 2 * rippleAmp * u;
+          } else if (deg >= 180 + alphaDeg && deg < 360) {
+            const u = (deg - (180 + alphaDeg)) / Math.max(1, 180 - alphaDeg);
+            r = -rippleAmp + 2 * rippleAmp * u;
+          } else {
+            // [0, alphaDeg]
+            const u = deg / Math.max(1, alphaDeg);
+            r = rippleAmp - 2 * rippleAmp * u;
+          }
+          iout = Math.max(0.05, idc + r);
         }
       } else {
-        // 1-Phase Full-Wave Bridge, 1-Phase with FWD, and 3-Phase converters:
-        // Constant, smooth straight horizontal DC current line Idc = (Vdc - E) / R
-        iout = idc;
+        // --- 3-PHASE CONVERTERS ---
+        // 6-pulse / 3-pulse ripple around average DC current Idc
+        const pulseCount = isFull ? 6 : 3;
+        const rippleAmp = idc > 0.1 ? Math.min(idc * 0.05, (0.05 * Vm) / Z) : 0;
+        const ripple = rippleAmp * Math.sin(pulseCount * (normTheta - alphaRad));
+        iout = Math.max(0, idc + ripple);
       }
     } else {
       iout = Math.max(0, vout / this.R);
