@@ -87,27 +87,22 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## ☁️ Deploying to Vercel via GitHub
+## 🌐 Hosting on GitHub Pages
 
-This project is structured as a zero-config static web application:
+This project is structured as a static, dependency-free web application ready for GitHub Pages:
 
-1. **Push to GitHub**:
-   Ensure all files are committed and pushed to `main`:
-   ```bash
-   git add .
-   git commit -m "feat: complete interactive bridge & controlled rectifier simulator"
-   git push -u origin main
-   ```
+### Live URL
+Once enabled, the simulator is accessible live at:
+**`https://ssingh132006.github.io/class-assignment6oct/`**
 
-2. **Connect to Vercel**:
-   - Go to [vercel.com](https://vercel.com) and log in with your GitHub account (`Ssingh132006`).
-   - Click **"Add New..."** > **"Project"**.
-   - Select the repository: `class-assignment6oct`.
-   - Vercel automatically detects the root `index.html` and `vercel.json`.
-   - Click **"Deploy"**.
-
-3. **Live Instant URL**:
-   Your simulator will be live instantly with global CDN acceleration and HTTPS!
+### Automatic Deployment via GitHub Actions
+A GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) is included in this repository. To enable it:
+1. Navigate to your repository on GitHub: **[Ssingh132006/class-assignment6oct](https://github.com/Ssingh132006/class-assignment6oct)**.
+2. Go to **Settings** > **Pages** (under Code and automation in the left sidebar).
+3. Under **Build and deployment** > **Source**, choose either:
+   - **GitHub Actions** (recommended — automatically deploys via `.github/workflows/deploy-pages.yml` on every push to `main`), OR
+   - **Deploy from a branch** > select `main` branch, `/ (root)` folder, and click **Save**.
+4. Your site will be published at `https://ssingh132006.github.io/class-assignment6oct/`.
 
 ---
 
