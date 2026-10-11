@@ -150,6 +150,7 @@ export class SchematicRenderer {
    */
   renderSchematic(config) {
     const { phase, rectType, device, load } = config;
+    this.currentConfig = config;
     const isThy = device === 'thyristor';
     const isFull = rectType === 'full';
     const is3ph = phase === '3ph';
@@ -170,6 +171,15 @@ export class SchematicRenderer {
     } else {
       content = this.render3PhFullBridge(isThy, load);
     }
+
+    // Append dedicated active current overlay paths:
+    // 1) Solid white base line on conducting sections
+    // 2) Glowing colored dashes moving in physical current direction
+    content += `
+      <!-- Active Conduction Current Overlays -->
+      <path id="active-current-base" class="current-base-path" d="" />
+      <path id="active-current-flow" class="current-flow-trace" d="" />
+    `;
 
     svg.innerHTML = content;
     this.container.appendChild(svg);
@@ -224,6 +234,7 @@ export class SchematicRenderer {
   // =========================================================================
   // 1-PHASE FULL-WAVE BRIDGE SCHEMATIC
   // Standard 4-device bridge where all 4 devices point UPWARDS towards DC+
+  // Wire connections route cleanly to leg midpoints without intersecting devices
   // =========================================================================
   render1PhFullBridge(isThy, load) {
     const t = isThy ? 'T' : 'D';
@@ -233,8 +244,11 @@ export class SchematicRenderer {
     // Leg 2 at x = 280 (T3 top, T2 bottom)
     // DC Positive rail at y = 70
     // DC Negative rail at y = 310
-    // AC Line 1 enters Leg 1 at midpoint y = 190
-    // AC Line 2 enters Leg 2 at midpoint y = 190
+    // Upper devices: yTop = 70, yBottom = 175
+    // Lower devices: yTop = 205, yBottom = 310
+    // Midpoint wire space: y = 175 to 205 (open gap)
+    // AC Line 1 enters Leg 1 at y = 185
+    // AC Line 2 enters Leg 2 at y = 195 (arches over Leg 1 at x = 180)
 
     return `
       <!-- AC Source on Left -->
@@ -244,16 +258,20 @@ export class SchematicRenderer {
         <text x="0" y="42" class="source-label" text-anchor="middle">v<tspan dy="3" font-size="9">s</tspan><tspan dy="-3">(t)</tspan></text>
       </g>
 
-      <!-- AC Input Lines to Bridge Midpoints -->
-      <!-- Line 1: from AC source top (65, 164) to (65, 130) to (180, 130) to Leg 1 Midpoint (180, 190) -->
-      <path id="wire-ac1" d="M 65,164 L 65,130 L 180,130 L 180,190" class="wire-base" />
+      <!-- AC Input Lines to Leg Midpoints -->
+      <!-- Line 1: from AC source top (65, 164) down to y=185, straight into Leg 1 Midpoint (180, 185) -->
+      <path id="wire-ac1" d="M 65,164 L 65,185 L 180,185" class="wire-base" />
 
-      <!-- Line 2: from AC source bot (65, 216) to (65, 250) to (280, 250) to Leg 2 Midpoint (280, 190) -->
-      <path id="wire-ac2" d="M 65,216 L 65,250 L 280,250 L 280,190" class="wire-base" />
+      <!-- Line 2: from AC source bot (65, 216) up to y=195, jumps over Leg 1 at x=180 into Leg 2 Midpoint (280, 195) -->
+      <path id="wire-ac2" d="M 65,216 L 65,195 L 172,195 A 8 8 0 0 1 188,195 L 280,195" class="wire-base" />
 
-      <!-- Junction dots at AC midpoints -->
-      ${this.dot(180, 190)}
-      ${this.dot(280, 190)}
+      <!-- Leg Midpoint Vertical Connecting Wires between Upper and Lower Devices -->
+      <line x1="180" y1="175" x2="180" y2="205" class="wire-base" />
+      <line x1="280" y1="175" x2="280" y2="205" class="wire-base" />
+
+      <!-- Junction dots at AC leg midpoints -->
+      ${this.dot(180, 185)}
+      ${this.dot(280, 195)}
 
       <!-- TOP DC POSITIVE RAIL (y = 70) -->
       <line x1="180" y1="70" x2="440" y2="70" class="wire-base" id="rail-dc-pos" />
@@ -268,18 +286,18 @@ export class SchematicRenderer {
       ${this.dot(280, 310)}
 
       <!-- ================= BRIDGE LEG 1 (x = 180) ================= -->
-      <!-- Top Device T1 / D1 (points UP from midpoint 190 to top rail 70) -->
-      ${this.verticalDevice(`${t}1`, `${t}1`, 180, 70, 190, isThy)}
+      <!-- Top Device T1 / D1 (points UP from midpoint 175 to top rail 70) -->
+      ${this.verticalDevice(`${t}1`, `${t}1`, 180, 70, 175, isThy)}
 
-      <!-- Bottom Device T4 / D4 (points UP from bottom rail 310 to midpoint 190) -->
-      ${this.verticalDevice(`${t}4`, `${t}4`, 180, 190, 310, isThy)}
+      <!-- Bottom Device T4 / D4 (points UP from bottom rail 310 to midpoint 205) -->
+      ${this.verticalDevice(`${t}4`, `${t}4`, 180, 205, 310, isThy)}
 
       <!-- ================= BRIDGE LEG 2 (x = 280) ================= -->
-      <!-- Top Device T3 / D3 (points UP from midpoint 190 to top rail 70) -->
-      ${this.verticalDevice(`${t}3`, `${t}3`, 280, 70, 190, isThy)}
+      <!-- Top Device T3 / D3 (points UP from midpoint 175 to top rail 70) -->
+      ${this.verticalDevice(`${t}3`, `${t}3`, 280, 70, 175, isThy)}
 
-      <!-- Bottom Device T2 / D2 (points UP from bottom rail 310 to midpoint 190) -->
-      ${this.verticalDevice(`${t}2`, `${t}2`, 280, 190, 310, isThy)}
+      <!-- Bottom Device T2 / D2 (points UP from bottom rail 310 to midpoint 205) -->
+      ${this.verticalDevice(`${t}2`, `${t}2`, 280, 205, 310, isThy)}
 
       <!-- Optional Freewheeling Diode (FWD) at x = 360 -->
       ${hasFWD ? `
@@ -364,6 +382,7 @@ export class SchematicRenderer {
   // =========================================================================
   // 3-PHASE FULL-WAVE BRIDGE SCHEMATIC (6-Pulse Graetz)
   // 3 Legs, 6 Devices, All pointing UPWARDS towards DC+
+  // Wire connections route cleanly to leg midpoints with IEEE jumper bridges
   // =========================================================================
   render3PhFullBridge(isThy, load) {
     const t = isThy ? 'T' : 'D';
@@ -374,7 +393,12 @@ export class SchematicRenderer {
     // Leg 3 at x = 340 (T5 Top, T2 Bottom) -> Phase C
     // DC+ rail at y = 70
     // DC- rail at y = 310
-    // AC Midpoints at y = 190
+    // Upper devices: yTop = 70, yBottom = 175
+    // Lower devices: yTop = 205, yBottom = 310
+    // Midpoint wire space: y = 175 to 205 (open gap)
+    // Phase A enters Leg 1 at y = 180
+    // Phase B enters Leg 2 at y = 190 (jumper over Leg 1)
+    // Phase C enters Leg 3 at y = 200 (jumpers over Leg 1 and Leg 2)
 
     return `
       <!-- 3-Phase Input Terminals on Left -->
@@ -392,20 +416,25 @@ export class SchematicRenderer {
         <text x="0" y="164" fill="#3b82f6" font-size="10" font-weight="bold" text-anchor="middle">C</text>
       </g>
 
-      <!-- Phase Input Lines to Midpoints -->
-      <!-- Phase A: (45+14, 130) -> (160, 130) -> Midpoint Leg 1 (160, 190) -->
-      <path id="wire-in-a" d="M 59,130 L 160,130 L 160,190" class="wire-base" />
+      <!-- Phase Input Lines to Midpoints (Clear of device bodies) -->
+      <!-- Phase A: from (59, 130) down to y=180, straight into Leg 1 Midpoint (160, 180) -->
+      <path id="wire-in-a" d="M 59,130 L 100,130 L 100,180 L 160,180" class="wire-base" />
 
-      <!-- Phase B: (45+14, 190) -> Midpoint Leg 2 (250, 190) -->
-      <path id="wire-in-b" d="M 59,190 L 250,190" class="wire-base" />
+      <!-- Phase B: from (59, 190), jumps over Leg 1 at x=160 into Leg 2 Midpoint (250, 190) -->
+      <path id="wire-in-b" d="M 59,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190" class="wire-base" />
 
-      <!-- Phase C: (45+14, 250) -> (340, 250) -> Midpoint Leg 3 (340, 190) -->
-      <path id="wire-in-c" d="M 59,250 L 340,250 L 340,190" class="wire-base" />
+      <!-- Phase C: from (59, 250) up to y=200, jumps over Leg 1 and Leg 2 into Leg 3 Midpoint (340, 200) -->
+      <path id="wire-in-c" d="M 59,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200" class="wire-base" />
+
+      <!-- Midpoint Vertical Connecting Wires in Legs -->
+      <line x1="160" y1="175" x2="160" y2="205" class="wire-base" />
+      <line x1="250" y1="175" x2="250" y2="205" class="wire-base" />
+      <line x1="340" y1="175" x2="340" y2="205" class="wire-base" />
 
       <!-- Midpoint Junction Dots -->
-      ${this.dot(160, 190)}
+      ${this.dot(160, 180)}
       ${this.dot(250, 190)}
-      ${this.dot(340, 190)}
+      ${this.dot(340, 200)}
 
       <!-- TOP DC POSITIVE RAIL (y = 70) -->
       <line x1="160" y1="70" x2="450" y2="70" class="wire-base" id="rail-dc-pos" />
@@ -422,22 +451,22 @@ export class SchematicRenderer {
       ${this.dot(340, 310)}
 
       <!-- ================= LEG 1: Phase A (x = 160) ================= -->
-      <!-- T1 (Top): points UP from midpoint 190 to top rail 70 -->
-      ${this.verticalDevice(`${t}1`, `${t}1`, 160, 70, 190, isThy)}
-      <!-- T4 (Bottom): points UP from bottom rail 310 to midpoint 190 -->
-      ${this.verticalDevice(`${t}4`, `${t}4`, 160, 190, 310, isThy)}
+      <!-- T1 (Top): points UP from midpoint 175 to top rail 70 -->
+      ${this.verticalDevice(`${t}1`, `${t}1`, 160, 70, 175, isThy)}
+      <!-- T4 (Bottom): points UP from bottom rail 310 to midpoint 205 -->
+      ${this.verticalDevice(`${t}4`, `${t}4`, 160, 205, 310, isThy)}
 
       <!-- ================= LEG 2: Phase B (x = 250) ================= -->
-      <!-- T3 (Top): points UP from midpoint 190 to top rail 70 -->
-      ${this.verticalDevice(`${t}3`, `${t}3`, 250, 70, 190, isThy)}
-      <!-- T6 (Bottom): points UP from bottom rail 310 to midpoint 190 -->
-      ${this.verticalDevice(`${t}6`, `${t}6`, 250, 190, 310, isThy)}
+      <!-- T3 (Top): points UP from midpoint 175 to top rail 70 -->
+      ${this.verticalDevice(`${t}3`, `${t}3`, 250, 70, 175, isThy)}
+      <!-- T6 (Bottom): points UP from bottom rail 310 to midpoint 205 -->
+      ${this.verticalDevice(`${t}6`, `${t}6`, 250, 205, 310, isThy)}
 
       <!-- ================= LEG 3: Phase C (x = 340) ================= -->
-      <!-- T5 (Top): points UP from midpoint 190 to top rail 70 -->
-      ${this.verticalDevice(`${t}5`, `${t}5`, 340, 70, 190, isThy)}
-      <!-- T2 (Bottom): points UP from bottom rail 310 to midpoint 190 -->
-      ${this.verticalDevice(`${t}2`, `${t}2`, 340, 190, 310, isThy)}
+      <!-- T5 (Top): points UP from midpoint 175 to top rail 70 -->
+      ${this.verticalDevice(`${t}5`, `${t}5`, 340, 70, 175, isThy)}
+      <!-- T2 (Bottom): points UP from bottom rail 310 to midpoint 205 -->
+      ${this.verticalDevice(`${t}2`, `${t}2`, 340, 205, 310, isThy)}
 
       <!-- Optional Freewheeling Diode at x = 395 -->
       ${hasFWD ? `
@@ -454,6 +483,102 @@ export class SchematicRenderer {
   }
 
   /**
+   * Returns the exact directed SVG path for the active current loop.
+   * Path starts at positive potential, passes through devices & load,
+   * and completes through the negative return rail.
+   */
+  getActiveCurrentPath(conductingDevices) {
+    if (!conductingDevices || conductingDevices.length === 0) return '';
+    const config = this.currentConfig || {};
+    const { phase, rectType } = config;
+    const is3ph = phase === '3ph';
+    const isFull = rectType === 'full';
+
+    // 1-PHASE FULL-WAVE BRIDGE
+    if (!is3ph && isFull) {
+      if (conductingDevices.includes('T1') || conductingDevices.includes('D1')) {
+        // Positive cycle: Source(+) -> Line 1 -> T1 -> +DC Rail -> Load -> -DC Rail -> T2 -> Line 2 (jumper) -> Source(-)
+        return 'M 65,164 L 65,185 L 180,185 L 180,70 L 440,70 L 440,310 L 280,310 L 280,195 L 188,195 A 8 8 0 0 0 172,195 L 65,195 L 65,216';
+      }
+      if (conductingDevices.includes('T3') || conductingDevices.includes('D3') || conductingDevices.includes('T4') || conductingDevices.includes('D4')) {
+        // Negative cycle: Source(-) -> Line 2 (jumper) -> T3 -> +DC Rail -> Load -> -DC Rail -> T4 -> Line 1 -> Source(+)
+        return 'M 65,216 L 65,195 L 172,195 A 8 8 0 0 1 188,195 L 280,195 L 280,70 L 440,70 L 440,310 L 180,310 L 180,185 L 65,185 L 65,164';
+      }
+      if (conductingDevices.includes('FWD')) {
+        // Freewheeling loop: Load bottom -> FWD bottom -> UP FWD -> Load top -> DOWN Load
+        return 'M 440,310 L 360,310 L 360,70 L 440,70 L 440,310';
+      }
+    }
+
+    // 1-PHASE HALF-WAVE
+    if (!is3ph && !isFull) {
+      if (conductingDevices.includes('T1') || conductingDevices.includes('D1')) {
+        return 'M 80,162 L 80,100 L 430,100 L 430,280 L 80,280 L 80,218';
+      }
+      if (conductingDevices.includes('FWD')) {
+        return 'M 430,280 L 340,280 L 340,100 L 430,100 L 430,280';
+      }
+    }
+
+    // 3-PHASE HALF-WAVE
+    if (is3ph && !isFull) {
+      if (conductingDevices.includes('T1') || conductingDevices.includes('D1')) {
+        return 'M 64,110 L 121,110 L 330,110 L 440,110 L 440,320 L 35,320 L 35,190 L 60,190';
+      }
+      if (conductingDevices.includes('T2') || conductingDevices.includes('D2')) {
+        return 'M 64,190 L 121,190 L 330,190 L 330,110 L 440,110 L 440,320 L 35,320 L 35,190 L 60,190';
+      }
+      if (conductingDevices.includes('T3') || conductingDevices.includes('D3')) {
+        return 'M 64,270 L 121,270 L 330,270 L 330,110 L 440,110 L 440,320 L 35,320 L 35,190 L 60,190';
+      }
+      if (conductingDevices.includes('FWD')) {
+        return 'M 440,320 L 380,320 L 380,110 L 440,110 L 440,320';
+      }
+    }
+
+    // 3-PHASE FULL-WAVE (6-Pulse)
+    if (is3ph && isFull) {
+      if (conductingDevices.includes('FWD')) {
+        return 'M 450,310 L 395,310 L 395,70 L 450,70 L 450,310';
+      }
+
+      const hasT1 = conductingDevices.includes('T1') || conductingDevices.includes('D1');
+      const hasT3 = conductingDevices.includes('T3') || conductingDevices.includes('D3');
+      const hasT5 = conductingDevices.includes('T5') || conductingDevices.includes('D5');
+      const hasT4 = conductingDevices.includes('T4') || conductingDevices.includes('D4');
+      const hasT6 = conductingDevices.includes('T6') || conductingDevices.includes('D6');
+      const hasT2 = conductingDevices.includes('T2') || conductingDevices.includes('D2');
+
+      // T1 (Phase A+) & T2 (Phase C-)
+      if (hasT1 && hasT2) {
+        return 'M 64,130 L 100,130 L 100,180 L 160,180 L 160,70 L 450,70 L 450,310 L 340,310 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250';
+      }
+      // T1 (Phase A+) & T6 (Phase B-)
+      if (hasT1 && hasT6) {
+        return 'M 64,130 L 100,130 L 100,180 L 160,180 L 160,70 L 450,70 L 450,310 L 250,310 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190';
+      }
+      // T3 (Phase B+) & T2 (Phase C-)
+      if (hasT3 && hasT2) {
+        return 'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,70 L 450,70 L 450,310 L 340,310 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250';
+      }
+      // T3 (Phase B+) & T4 (Phase A-)
+      if (hasT3 && hasT4) {
+        return 'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,70 L 450,70 L 450,310 L 160,310 L 160,180 L 100,180 L 100,130 L 64,130';
+      }
+      // T5 (Phase C+) & T4 (Phase A-)
+      if (hasT5 && hasT4) {
+        return 'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,70 L 450,70 L 450,310 L 160,310 L 160,180 L 100,180 L 100,130 L 64,130';
+      }
+      // T5 (Phase C+) & T6 (Phase B-)
+      if (hasT5 && hasT6) {
+        return 'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,70 L 450,70 L 450,310 L 250,310 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190';
+      }
+    }
+
+    return '';
+  }
+
+  /**
    * Updates visual conduction state (illuminates active devices and current loops)
    */
   updateConductionState(conductingDevices = []) {
@@ -466,12 +591,6 @@ export class SchematicRenderer {
       g.classList.add('device-blocking');
     });
 
-    // Reset all wires
-    const allWires = this.currentSvg.querySelectorAll('.wire-base');
-    allWires.forEach(w => {
-      w.classList.remove('wire-active');
-    });
-
     // Highlight actively conducting devices
     conductingDevices.forEach(devId => {
       const el = this.currentSvg.querySelector(`#dev-${devId}`);
@@ -481,11 +600,16 @@ export class SchematicRenderer {
       }
     });
 
-    // Animate active current wires
-    if (conductingDevices.length > 0) {
-      allWires.forEach(w => {
-        w.classList.add('wire-active');
-      });
+    // Compute directed current path
+    const pathD = this.getActiveCurrentPath(conductingDevices);
+    const basePathEl = this.currentSvg.querySelector('#active-current-base');
+    const flowPathEl = this.currentSvg.querySelector('#active-current-flow');
+
+    if (basePathEl) {
+      basePathEl.setAttribute('d', pathD);
+    }
+    if (flowPathEl) {
+      flowPathEl.setAttribute('d', pathD);
     }
   }
 }

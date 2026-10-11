@@ -55,37 +55,35 @@
   transition: stroke 0.15s ease;
 }
 
-.wire-active {
-  stroke: var(--color-accent);
-  stroke-width: 3.5;
-  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.8));
-  stroke-dasharray: 6 4;
-  animation: flowCurrent 0.8s linear infinite;
+/* Active Conduction Paths: Solid White Line + Directional Glowing Dashes */
+.current-base-path {
+  stroke: #ffffff;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
 }
 
-.wire-active-return {
-  stroke: #38bdf8;
-  stroke-width: 3.5;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
-  stroke-dasharray: 6 4;
-  animation: flowCurrentReverse 0.8s linear infinite;
+.current-flow-trace {
+  stroke: #00f2fe;
+  stroke-width: 3.4;
+  stroke-dasharray: 6 12;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px #00f2fe);
+  animation: flowCurrentForward 0.6s linear infinite;
 }
 
-@keyframes flowCurrent {
+@keyframes flowCurrentForward {
   from {
-    stroke-dashoffset: 20;
+    stroke-dashoffset: 18;
   }
   to {
     stroke-dashoffset: 0;
-  }
-}
-
-@keyframes flowCurrentReverse {
-  from {
-    stroke-dashoffset: 0;
-  }
-  to {
-    stroke-dashoffset: 20;
   }
 }
 
@@ -109,7 +107,8 @@
 }
 
 .wire-base,
-.wire-active {
+.current-base-path,
+.current-flow-trace {
   pointer-events: none;
 }
 
