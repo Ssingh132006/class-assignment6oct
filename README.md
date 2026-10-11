@@ -50,10 +50,10 @@ An interactive, high-fidelity simulator for studying **Diode Bridge Rectifiers**
 ### 4. Comprehensive Analysis & Educational Tabs
 - **Performance Metrics**:
   - Average DC Voltage ($V_{dc}$)
-  - RMS Output Voltage ($V_{rms}$)
+  - Input RMS Voltage ($V_{s}$)
   - Average DC Current ($I_{dc}$)
-  - RMS Output Current ($I_{rms}$)
-  - Form Factor ($FF = V_{rms}/V_{dc}$)
+  - Peak Supply Voltage ($V_{m}$)
+  - Form Factor ($FF = V_{o,rms}/V_{dc}$)
   - Ripple Factor ($RF = \sqrt{FF^2 - 1}$)
   - Rectification Efficiency ($\eta = P_{dc}/P_{ac} \times 100\%$)
   - Peak Inverse Voltage ($PIV$)

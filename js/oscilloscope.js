@@ -309,7 +309,7 @@ export class OscilloscopeRenderer {
 
         ctx.fillStyle = '#34d399';
         ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillText(`V_dc = ${metrics.Vdc} V`, 14, vdcY - 6);
+        ctx.fillText(`Vdc = ${metrics.Vdc} V`, 14, vdcY - 6);
         ctx.restore();
       }
     }

@@ -242,19 +242,19 @@
           <div class="trace-legend-bar">
             <div class="trace-toggles">
               <button class="trace-pill active" data-trace="vin" title="Toggle Input Voltage Trace">
-                <span class="trace-indicator"></span> v_s(t) Input AC
+                <span class="trace-indicator"></span> v<sub>s</sub>(t) Input AC
               </button>
               <button class="trace-pill active" data-trace="gate" id="traceGateBtn" title="Toggle Gate Firing Pulses">
-                <span class="trace-indicator"></span> i_g(t) Gate Pulses
+                <span class="trace-indicator"></span> i<sub>g</sub>(t) Gate Pulses
               </button>
               <button class="trace-pill active" data-trace="vout" title="Toggle Output Voltage Trace">
-                <span class="trace-indicator"></span> v_o(t) Rectified Output
+                <span class="trace-indicator"></span> v<sub>o</sub>(t) Rectified Output
               </button>
               <button class="trace-pill active" data-trace="iout" title="Toggle Load Current Trace">
-                <span class="trace-indicator"></span> i_o(t) Load Current
+                <span class="trace-indicator"></span> i<sub>o</sub>(t) Load Current
               </button>
               <button class="trace-pill" data-trace="vt" title="Toggle Device Voltage Drop Trace">
-                <span class="trace-indicator"></span> v_T1(t) PIV Monitor
+                <span class="trace-indicator"></span> v<sub>T1</sub>(t) PIV Monitor
               </button>
             </div>
           </div>
@@ -267,9 +267,9 @@
             <div id="scopeReadout" class="scope-cursor-readout" style="display: none;">
               <div class="readout-row"><span class="readout-label">Angle (ωt):</span><span id="readoutAngle" class="readout-val">0.0°</span></div>
               <div class="readout-row"><span class="readout-label">Time (t):</span><span id="readoutTime" class="readout-val">0.0 ms</span></div>
-              <div class="readout-row"><span class="readout-label" style="color: var(--trace-vin);">v_s(t):</span><span id="readoutVin" class="readout-val">0.0 V</span></div>
-              <div class="readout-row"><span class="readout-label" style="color: var(--trace-vout);">v_o(t):</span><span id="readoutVout" class="readout-val">0.0 V</span></div>
-              <div class="readout-row"><span class="readout-label" style="color: var(--trace-iout);">i_o(t):</span><span id="readoutIout" class="readout-val">0.0 A</span></div>
+              <div class="readout-row"><span class="readout-label" style="color: var(--trace-vin);">v<sub>s</sub>(t):</span><span id="readoutVin" class="readout-val">0.0 V</span></div>
+              <div class="readout-row"><span class="readout-label" style="color: var(--trace-vout);">v<sub>o</sub>(t):</span><span id="readoutVout" class="readout-val">0.0 V</span></div>
+              <div class="readout-row"><span class="readout-label" style="color: var(--trace-iout);">i<sub>o</sub>(t):</span><span id="readoutIout" class="readout-val">0.0 A</span></div>
             </div>
           </div>
 
@@ -298,49 +298,49 @@
             <div class="metric-card">
               <div class="metric-header">
                 <span class="metric-title">Average DC Voltage</span>
-                <span class="metric-symbol">V_dc</span>
+                <span class="metric-symbol">V<sub>dc</sub></span>
               </div>
               <div class="metric-value-row">
                 <span id="metricVdc" class="metric-value">146.4</span>
                 <span class="metric-unit">V</span>
               </div>
-              <span class="metric-formula-subtext" id="metricVdcFormula">Theoretical: 146.4 V</span>
+              <span class="metric-formula-subtext" id="metricVdcFormula">Formula: 146.4 V</span>
             </div>
 
             <div class="metric-card">
               <div class="metric-header">
-                <span class="metric-title">RMS Output Voltage</span>
-                <span class="metric-symbol">V_rms</span>
+                <span class="metric-title">Input RMS Voltage</span>
+                <span class="metric-symbol">V<sub>s</sub></span>
               </div>
               <div class="metric-value-row">
-                <span id="metricVrms" class="metric-value">229.8</span>
+                <span id="metricVinRms" class="metric-value">230.0</span>
                 <span class="metric-unit">V</span>
               </div>
-              <span class="metric-formula-subtext">Effective RMS heating</span>
+              <span class="metric-formula-subtext">AC Supply RMS (V<sub>s</sub>)</span>
             </div>
 
             <div class="metric-card success">
               <div class="metric-header">
                 <span class="metric-title">Average DC Current</span>
-                <span class="metric-symbol">I_dc</span>
+                <span class="metric-symbol">I<sub>dc</sub></span>
               </div>
               <div class="metric-value-row">
                 <span id="metricIdc" class="metric-value">14.6</span>
                 <span class="metric-unit">A</span>
               </div>
-              <span class="metric-formula-subtext">V_dc / R load</span>
+              <span class="metric-formula-subtext">V<sub>dc</sub> / R load</span>
             </div>
 
             <div class="metric-card success">
               <div class="metric-header">
-                <span class="metric-title">RMS Output Current</span>
-                <span class="metric-symbol">I_rms</span>
+                <span class="metric-title">Peak Supply Voltage</span>
+                <span class="metric-symbol">V<sub>m</sub></span>
               </div>
               <div class="metric-value-row">
-                <span id="metricIrms" class="metric-value">16.2</span>
-                <span class="metric-unit">A</span>
+                <span id="metricVm" class="metric-value">325.3</span>
+                <span class="metric-unit">V</span>
               </div>
-              <span class="metric-formula-subtext">Current dissipation</span>
+              <span class="metric-formula-subtext">√2 · V<sub>s</sub></span>
             </div>
 
             <div class="metric-card warning">
@@ -364,7 +364,7 @@
                 <span id="metricFf" class="metric-value">1.11</span>
                 <span class="metric-unit">-</span>
               </div>
-              <span class="metric-formula-subtext">V_rms / V_dc</span>
+              <span class="metric-formula-subtext">V<sub>o,rms</sub> / V<sub>dc</sub></span>
             </div>
 
             <div class="metric-card purple">
@@ -376,7 +376,7 @@
                 <span id="metricEff" class="metric-value">81.2</span>
                 <span class="metric-unit">%</span>
               </div>
-              <span class="metric-formula-subtext">P_dc / P_ac</span>
+              <span class="metric-formula-subtext">P<sub>dc</sub> / P<sub>ac</sub></span>
             </div>
 
             <div class="metric-card">
@@ -446,7 +446,7 @@
                 <tr>
                   <th>Phase Interval (ωt)</th>
                   <th>Conducting Devices</th>
-                  <th>Output Voltage v_o(t)</th>
+                  <th>Output Voltage v<sub>o</sub>(t)</th>
                   <th>Circuit Operation & Conduction Path</th>
                 </tr>
               </thead>

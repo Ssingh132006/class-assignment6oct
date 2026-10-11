@@ -208,14 +208,14 @@ export class MathEngine {
       }
       // --- 3-PHASE FULL-WAVE BRIDGE (6-Pulse Graetz) ---
       else {
-        // Natural commutation starts at 60° (v_ab maximum)
-        // Firing sequence: T1 (60°+α) -> T2 (120°+α) -> T3 (180°+α) -> T4 (240°+α) -> T5 (300°+α) -> T6 (360°+α)
-        const t1Angle = (60 + alphaDeg) % 360;
-        const t2Angle = (120 + alphaDeg) % 360;
-        const t3Angle = (180 + alphaDeg) % 360;
-        const t4Angle = (240 + alphaDeg) % 360;
-        const t5Angle = (300 + alphaDeg) % 360;
-        const t6Angle = (360 + alphaDeg) % 360;
+        // Natural commutation for 6-pulse bridge starts at 30°
+        // Firing sequence: T1 (30°+α) -> T2 (90°+α) -> T3 (150°+α) -> T4 (210°+α) -> T5 (270°+α) -> T6 (330°+α)
+        const t1Angle = (30 + alphaDeg) % 360;
+        const t2Angle = (90 + alphaDeg) % 360;
+        const t3Angle = (150 + alphaDeg) % 360;
+        const t4Angle = (210 + alphaDeg) % 360;
+        const t5Angle = (270 + alphaDeg) % 360;
+        const t6Angle = (330 + alphaDeg) % 360;
 
         const pulseWidth = 6;
         if (isThy) {
@@ -229,8 +229,8 @@ export class MathEngine {
           ];
         }
 
-        // Normalized 60-degree sector
-        const sectorDeg = (((deg - (60 + alphaDeg)) % 360) + 360) % 360;
+        // Normalized 60-degree sector shifted by (30 + alpha)
+        const sectorDeg = (((deg - (30 + alphaDeg)) % 360) + 360) % 360;
 
         if (sectorDeg >= 0 && sectorDeg < 60) {
           vout = vab;

@@ -95,9 +95,9 @@ class RectifierStudioApp {
     // Metrics
     this.metricVdc = document.getElementById('metricVdc');
     this.metricVdcFormula = document.getElementById('metricVdcFormula');
-    this.metricVrms = document.getElementById('metricVrms');
+    this.metricVinRms = document.getElementById('metricVinRms');
     this.metricIdc = document.getElementById('metricIdc');
-    this.metricIrms = document.getElementById('metricIrms');
+    this.metricVm = document.getElementById('metricVm');
     this.metricRf = document.getElementById('metricRf');
     this.metricFf = document.getElementById('metricFf');
     this.metricEff = document.getElementById('metricEff');
@@ -405,9 +405,9 @@ class RectifierStudioApp {
     const vinPill = document.querySelector('.trace-pill[data-trace="vin"]');
     if (vinPill) {
       if (this.state.phase === '3ph') {
-        vinPill.innerHTML = '<span class="trace-indicator"></span> v_A, v_B, v_C (3-Phase)';
+        vinPill.innerHTML = '<span class="trace-indicator"></span> v<sub>A</sub>, v<sub>B</sub>, v<sub>C</sub> (3-Phase)';
       } else {
-        vinPill.innerHTML = '<span class="trace-indicator"></span> v_s(t) Input AC';
+        vinPill.innerHTML = '<span class="trace-indicator"></span> v<sub>s</sub>(t) Input AC';
       }
     }
 
@@ -443,9 +443,10 @@ class RectifierStudioApp {
 
     // Update metrics cards
     this.metricVdc.textContent = this.currentMetrics.Vdc;
-    this.metricVrms.textContent = this.currentMetrics.Vrms;
+    if (this.metricVinRms) this.metricVinRms.textContent = this.state.Vrms.toFixed(1);
     this.metricIdc.textContent = this.currentMetrics.Idc;
-    this.metricIrms.textContent = this.currentMetrics.Irms;
+    const vm = (Math.SQRT2 * this.state.Vrms).toFixed(1);
+    if (this.metricVm) this.metricVm.textContent = vm;
     this.metricRf.textContent = this.currentMetrics.RF;
     this.metricFf.textContent = this.currentMetrics.FF;
     this.metricEff.textContent = this.currentMetrics.efficiency;
