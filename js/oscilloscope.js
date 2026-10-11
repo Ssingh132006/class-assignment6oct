@@ -114,7 +114,7 @@ export class OscilloscopeRenderer {
     ctx.stroke();
 
     // Voltage division markings on left
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = '#94a3b8';
     ctx.font = '9px "JetBrains Mono", monospace';
     ctx.textAlign = 'left';
 
@@ -152,7 +152,7 @@ export class OscilloscopeRenderer {
 
     markers.forEach(m => {
       const x = (m.deg / 720) * w;
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = '#94a3b8';
       ctx.fillText(m.label, x + 4, zeroY + 14);
       ctx.beginPath();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';

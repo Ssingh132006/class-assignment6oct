@@ -344,73 +344,33 @@ export class MathEngine {
     // ==========================================
     if (this.load === 'R') {
       iout = Math.max(0, vout / this.R);
-    } else if (conductingDevices.length === 0) {
-      iout = 0;
-    } else {
-      const omegaL = this.getOmega() * this.L;
-      const Z = Math.sqrt(this.R * this.R + Math.pow(omegaL, 2));
-      const phi = Math.atan(omegaL / this.R);
-      const tanPhi = Math.tan(phi);
+    } else if (isRL) {
+      // Textbook standard for R-L / highly inductive load:
+      // Load current is constant, ripple-free DC (clean horizontal straight line)
+      const vdc = this.getAnalyticalVdc();
+      const idc = Math.max(0, (vdc - this.E) / this.R);
 
-      if (!is3ph && isFull) {
-        if (hasFWD) {
-          // With Freewheeling Diode:
-          const avgV = (Vm / Math.PI) * (1 + Math.cos(alphaRad));
-          const avgI = Math.max(0.1, (avgV - this.E) / this.R);
-          const ripple = 0.15 * avgI * Math.sin(2 * (normTheta - alphaRad));
-          iout = Math.max(0.05, avgI + ripple);
-        } else if (isRL) {
-          // Continuous Conduction Mode (Large L & small alpha) as shown in reference slide:
-          const avgV = (2 * Vm / Math.PI) * Math.cos(alphaRad);
-          const avgI = Math.max(0.2, (avgV - this.E) / this.R);
-          // Continuous ripple: ramps up while v_o > 0, ramps down while v_o < 0
-          const rippleAmp = avgI * 0.18;
-          let r = 0;
-          if (deg >= alphaDeg && deg < 180) {
-            const u = (deg - alphaDeg) / (180 - alphaDeg);
-            r = -rippleAmp + 2 * rippleAmp * u;
-          } else if (deg >= 180 && deg < 180 + alphaDeg) {
-            const u = (deg - 180) / Math.max(1, alphaDeg);
-            r = rippleAmp - 2 * rippleAmp * u;
-          } else if (deg >= 180 + alphaDeg && deg < 360) {
-            const u = (deg - (180 + alphaDeg)) / (180 - alphaDeg);
-            r = -rippleAmp + 2 * rippleAmp * u;
-          } else {
-            // [0, alphaDeg]
-            const u = deg / Math.max(1, alphaDeg);
-            r = rippleAmp - 2 * rippleAmp * u;
-          }
-          iout = Math.max(0.05, avgI + r);
-        } else {
-          // Pure R load
-          iout = Math.max(0, vout / this.R);
-        }
-      } else if (!is3ph && !isFull) {
-        // 1-Phase Half-Wave RL
-        const betaDeg = isRL ? this.getExtinctionBeta(alphaDeg) : 180;
-        if (deg >= alphaDeg && deg < (hasFWD ? 180 : betaDeg)) {
+      if (!is3ph && !isFull && !hasFWD) {
+        // 1-Phase Half-Wave without FWD is inherently discontinuous
+        const betaDeg = this.getExtinctionBeta(alphaDeg);
+        if (deg >= alphaDeg && deg < betaDeg) {
           const thetaLocal = (deg - alphaDeg) * DEG2RAD;
           const thetaAbs = deg * DEG2RAD;
-          iout = (Vm / Z) * (Math.sin(thetaAbs - phi) - Math.sin(alphaRad - phi) * Math.exp(-thetaLocal / tanPhi));
-        } else if (hasFWD && deg >= 180 && deg < betaDeg) {
-          const decayDeg = deg - 180;
-          const i180 = (Vm / Z) * (Math.sin(Math.PI - phi) - Math.sin(alphaRad - phi) * Math.exp(-((180 - alphaDeg) * DEG2RAD) / tanPhi));
-          iout = Math.max(0, i180) * Math.exp(-(decayDeg * DEG2RAD) / tanPhi);
+          const omegaL = this.getOmega() * this.L;
+          const Z = Math.sqrt(this.R * this.R + Math.pow(omegaL, 2));
+          const phi = Math.atan(omegaL / this.R);
+          const tanPhi = Math.tan(phi);
+          iout = Math.max(0, (Vm / Z) * (Math.sin(thetaAbs - phi) - Math.sin(alphaRad - phi) * Math.exp(-thetaLocal / tanPhi)));
         } else {
           iout = 0;
         }
-        iout = Math.max(0, iout);
       } else {
-        // 3-Phase Converters:
-        const avgV = this.getAnalyticalVdc();
-        const avgI = Math.max(0, (avgV - this.E) / this.R);
-        const rippleAmp = avgV > 0 
-          ? (avgV * 0.2) / Math.sqrt(this.R * this.R + Math.pow(omegaL, 2))
-          : 0;
-        const pulseMultiplier = isFull ? 6 : 3;
-        const ripple = rippleAmp * Math.sin(pulseMultiplier * normTheta);
-        iout = Math.max(0, avgI + ripple);
+        // 1-Phase Full-Wave Bridge, 1-Phase with FWD, and 3-Phase converters:
+        // Constant, smooth straight horizontal DC current line Idc = (Vdc - E) / R
+        iout = idc;
       }
+    } else {
+      iout = Math.max(0, vout / this.R);
     }
 
     return {

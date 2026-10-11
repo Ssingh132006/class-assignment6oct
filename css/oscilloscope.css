@@ -65,7 +65,8 @@ sub {
 }
 
 .trace-pill:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: #eaeae3;
+  color: var(--text-primary);
 }
 
 .trace-indicator {
@@ -75,46 +76,24 @@ sub {
   background: currentColor;
 }
 
-.trace-pill.active[data-trace="vin"] {
-  border-color: var(--trace-vin);
-  color: var(--trace-vin);
-  background: rgba(0, 242, 254, 0.12);
-  box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
-}
+.trace-pill[data-trace="vin"] .trace-indicator { background: var(--trace-vin); }
+.trace-pill[data-trace="gate"] .trace-indicator { background: var(--trace-gate); }
+.trace-pill[data-trace="vout"] .trace-indicator { background: var(--trace-vout); }
+.trace-pill[data-trace="iout"] .trace-indicator { background: var(--trace-iout); }
+.trace-pill[data-trace="vt"] .trace-indicator { background: var(--trace-vt); }
 
-.trace-pill.active[data-trace="gate"] {
-  border-color: var(--trace-gate);
-  color: var(--trace-gate);
-  background: rgba(192, 132, 252, 0.12);
-  box-shadow: 0 0 10px rgba(192, 132, 252, 0.2);
-}
-
-.trace-pill.active[data-trace="vout"] {
-  border-color: var(--trace-vout);
-  color: var(--trace-vout);
-  background: rgba(16, 185, 129, 0.12);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
-}
-
-.trace-pill.active[data-trace="iout"] {
-  border-color: var(--trace-iout);
-  color: var(--trace-iout);
-  background: rgba(245, 158, 11, 0.12);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
-}
-
-.trace-pill.active[data-trace="vt"] {
-  border-color: var(--trace-vt);
-  color: var(--trace-vt);
-  background: rgba(244, 63, 94, 0.12);
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
+.trace-pill.active {
+  background: #ffffff;
+  border-color: #d4d4cb;
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 /* Scope Canvas Screen */
 .scope-screen-wrapper {
   flex: 1;
   position: relative;
-  background: #050811;
+  background: #070a13;
   overflow: hidden;
   min-height: 380px;
   cursor: crosshair;
@@ -131,7 +110,7 @@ sub {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(11, 16, 30, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -141,7 +120,7 @@ sub {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   pointer-events: none;
   z-index: 10;
 }
@@ -159,12 +138,13 @@ sub {
 
 .readout-val {
   font-weight: 700;
+  color: var(--text-primary);
 }
 
 /* Bottom Oscilloscope Scrubber Bar */
 .scope-scrubber-bar {
-  padding: 0.6rem 1rem;
-  background: var(--bg-input);
+  padding: 0.65rem 1.25rem;
+  background: var(--bg-header);
   border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -174,6 +154,7 @@ sub {
 .scrubber-label {
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -186,7 +167,7 @@ sub {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--text-primary);
   min-width: 65px;
   text-align: right;
 }

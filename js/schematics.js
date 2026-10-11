@@ -550,19 +550,19 @@ export class SchematicRenderer {
       ];
     }
     if (loadType === 'RL' || loadType === 'RL_FWD') {
-      return [
-        `M ${x},${yTop} L ${x},100`,
-        `M ${x},165 L ${x},200`,
-        `M ${x},275 L ${x},${yBottom}`
-      ];
+      const segs = [];
+      if (yTop < 100) segs.push(`M ${x},${yTop} L ${x},100`);
+      segs.push(`M ${x},165 L ${x},200`);
+      if (yBottom > 275) segs.push(`M ${x},275 L ${x},${yBottom}`);
+      return segs;
     }
     // RLE Load
-    return [
-      `M ${x},${yTop} L ${x},90`,
-      `M ${x},145 L ${x},170`,
-      `M ${x},225 L ${x},250`,
-      `M ${x},275 L ${x},${yBottom}`
-    ];
+    const segs = [];
+    if (yTop < 90) segs.push(`M ${x},${yTop} L ${x},90`);
+    segs.push(`M ${x},145 L ${x},170`);
+    segs.push(`M ${x},225 L ${x},250`);
+    if (yBottom > 267) segs.push(`M ${x},267 L ${x},${yBottom}`);
+    return segs;
   }
 
   /**
@@ -612,11 +612,14 @@ export class SchematicRenderer {
         ].join(' ');
       }
       if (conductingDevices.includes('FWD')) {
-        // Freewheeling loop: Load bottom -> FWD Anode, FWD Cathode -> Load top -> Load segments
+        // Freewheeling loop: Seamless loop circulating through FWD (x=375) and Load (x=440)
+        // FWD Cathode (375,185) -> Top rail (375,65) -> Load Top (440,65) -> R top (440,100)
+        // Mid lead (440,165) -> (440,200)
+        // Load bottom (440,275) -> Bottom rail (440,325) -> FWD Anode lead (375,325) -> FWD Anode (375,205)
         return [
-          'M 440,325 L 375,325 L 375,290',
-          'M 375,100 L 375,65 L 440,65',
-          ...loadSegs
+          'M 375,185 L 375,65 L 440,65 L 440,100',
+          'M 440,165 L 440,200',
+          'M 440,275 L 440,325 L 375,325 L 375,205'
         ].join(' ');
       }
     }
@@ -633,10 +636,13 @@ export class SchematicRenderer {
         ].join(' ');
       }
       if (conductingDevices.includes('FWD')) {
+        // Freewheeling loop: FWD Cathode (340,180) -> Top rail (340,100) -> Load (430,100)
+        // Mid lead (430,165) -> (430,200)
+        // Load bottom (430,275) -> Bottom rail (430,280) -> FWD Anode lead (340,280) -> FWD Anode (340,200)
         return [
-          'M 430,280 L 340,280 L 340,210',
-          'M 340,170 L 340,100 L 430,100',
-          ...loadSegs
+          'M 340,180 L 340,100 L 430,100',
+          'M 430,165 L 430,200',
+          'M 430,275 L 430,280 L 340,280 L 340,200'
         ].join(' ');
       }
     }
@@ -667,9 +673,9 @@ export class SchematicRenderer {
       const loadSegs = this.getLoadPathSegments(450, 70, 310, load);
       if (conductingDevices.includes('FWD')) {
         return [
-          'M 450,310 L 395,310 L 395,210',
-          'M 395,170 L 395,70 L 450,70',
-          ...loadSegs
+          'M 395,180 L 395,70 L 450,70 L 450,100',
+          'M 450,165 L 450,200',
+          'M 450,275 L 450,310 L 395,310 L 395,200'
         ].join(' ');
       }
 

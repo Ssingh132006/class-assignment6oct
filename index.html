@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=2.4">
-  <link rel="stylesheet" href="css/controls.css?v=2.4">
-  <link rel="stylesheet" href="css/circuit.css?v=2.4">
-  <link rel="stylesheet" href="css/oscilloscope.css?v=2.4">
-  <link rel="stylesheet" href="css/metrics.css?v=2.4">
+  <link rel="stylesheet" href="css/main.css?v=2.7">
+  <link rel="stylesheet" href="css/controls.css?v=2.7">
+  <link rel="stylesheet" href="css/circuit.css?v=2.7">
+  <link rel="stylesheet" href="css/oscilloscope.css?v=2.7">
+  <link rel="stylesheet" href="css/metrics.css?v=2.7">
   <!-- KaTeX for crisp mathematical formulas -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -208,8 +208,8 @@
 
           <!-- Floating Component Inspector Tooltip -->
           <div id="componentInspector" class="component-inspector-popover">
-            <div id="inspectorDeviceName" style="font-weight: 700; color: var(--color-accent); margin-bottom: 2px;">T1 (Thyristor)</div>
-            <div id="inspectorDeviceStatus" style="color: #cbd5e1;">State: Forward Conducting</div>
+            <div id="inspectorDeviceName" style="font-weight: 700; color: var(--text-primary); margin-bottom: 2px;">T1 (Thyristor)</div>
+            <div id="inspectorDeviceStatus" style="color: var(--text-secondary);">State: Forward Conducting</div>
             <div id="inspectorDeviceVoltage" style="color: var(--text-muted); font-size: 0.75rem;">Drop: ~1.2V | PIV Rating: 325.3V</div>
           </div>
         </section>
@@ -457,7 +457,7 @@
       <div>
         <span>Power Electronics Virtual Lab</span> • 
         <span>IIT Kharagpur Class Assignment</span> • 
-        <span>Author: <strong style="color: #fff;">Shreyas Singh</strong></span>
+        <span>Author: <strong style="color: var(--text-primary);">Shreyas Singh</strong></span>
       </div>
       <div>
         <span>Deploy ready for Vercel • Source: </span>
@@ -470,6 +470,6 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Application Logic Modules -->
-  <script type="module" src="js/app.js?v=2.6"></script>
+  <script type="module" src="js/app.js?v=2.7"></script>
 </body>
 </html>
