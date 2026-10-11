@@ -188,12 +188,6 @@
                 <span id="circuitHeaderSubtitle" class="panel-subtitle">1-Phase Full-Wave Thyristor Bridge</span>
               </div>
             </div>
-            <div class="panel-actions">
-              <span id="circuitStateBadge" class="status-badge">
-                <span class="badge-dot"></span>
-                <span id="circuitStateText">Conduction Active</span>
-              </span>
-            </div>
           </div>
 
           <!-- Interactive Vector SVG Schematic Container -->
@@ -206,7 +200,6 @@
             <div class="conducting-pairs-tracker">
               <span style="color: var(--text-muted);">Active Devices:</span>
               <span id="conductingDevicesPill" class="pair-pill">T1, T2</span>
-              <span id="conductionPathDesc" style="color: var(--text-secondary); font-size: 0.75rem;">Source(+) → T1 → Load → T2</span>
             </div>
             <div class="circuit-time-tag">
               <span>Phase: </span><span id="circuitAngleTag">45.0°</span> (ωt)
@@ -477,6 +470,6 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Application Logic Modules -->
-  <script type="module" src="js/app.js?v=2.5"></script>
+  <script type="module" src="js/app.js?v=2.6"></script>
 </body>
 </html>

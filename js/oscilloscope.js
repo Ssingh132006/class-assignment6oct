@@ -174,13 +174,8 @@ export class OscilloscopeRenderer {
     const w = this.width || 600;
     const h = this.height || 380;
 
-    // Determine peak voltage scale dynamically so 3-phase line voltages fit nicely
-    let maxV = 360;
-    if (this.is3Phase) {
-      maxV = 620; // 3-phase peak line voltage is sqrt(3)*325 = 563V
-    } else {
-      maxV = Math.max(350, (metrics.piv || 325) * 1.15);
-    }
+    // Stable fixed peak voltage scale so changing Vrms slider physically scales the waveform height on screen!
+    const maxV = this.is3Phase ? 800 : 500;
 
     this.drawGrid(maxV);
 
@@ -348,8 +343,8 @@ export class OscilloscopeRenderer {
       ctx.shadowBlur = 8;
       ctx.beginPath();
 
-      // Scale current to display cleanly on the same axis (scale: 4.8V per Ampere)
-      const currentScale = 4.8;
+      // Scale current to display cleanly on the same axis (scale: 4.0V per Ampere)
+      const currentScale = 4.0;
       for (let i = 0; i < series.angles.length; i++) {
         const [x, y] = toScreen(series.angles[i], series.iout[i] * currentScale);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);

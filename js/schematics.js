@@ -537,60 +537,140 @@ export class SchematicRenderer {
    * Returns the exact directed SVG path for the active current loop.
    * Path starts at positive potential, passes through devices & load,
    * and completes through the negative return rail.
+  /**
+   * Helper to compute load branch active path segments that STOP at component terminals
+   * instead of cutting through resistor, inductor, or battery bodies.
+   */
+  getLoadPathSegments(x, yTop, yBottom, loadType = 'RL') {
+    if (loadType === 'R') {
+      const yMid = (yTop + yBottom) / 2;
+      return [
+        `M ${x},${yTop} L ${x},${yMid - 50}`,
+        `M ${x},${yMid + 50} L ${x},${yBottom}`
+      ];
+    }
+    if (loadType === 'RL' || loadType === 'RL_FWD') {
+      return [
+        `M ${x},${yTop} L ${x},100`,
+        `M ${x},165 L ${x},200`,
+        `M ${x},275 L ${x},${yBottom}`
+      ];
+    }
+    // RLE Load
+    return [
+      `M ${x},${yTop} L ${x},90`,
+      `M ${x},145 L ${x},170`,
+      `M ${x},225 L ${x},250`,
+      `M ${x},275 L ${x},${yBottom}`
+    ];
+  }
+
+  /**
+   * Returns the exact directed SVG path for the active current loop.
+   * Path starts at positive potential, passes through leads, STOPS at component ends,
+   * and completes through the return rail.
    */
   getActiveCurrentPath(conductingDevices) {
     if (!conductingDevices || conductingDevices.length === 0) return '';
     const config = this.currentConfig || {};
-    const { phase, rectType } = config;
+    const { phase, rectType, load = 'RL' } = config;
     const is3ph = phase === '3ph';
     const isFull = rectType === 'full';
 
     // 1-PHASE FULL-WAVE BRIDGE
     if (!is3ph && isFull) {
+      const loadSegs = this.getLoadPathSegments(440, 65, 325, load);
+
       if (conductingDevices.includes('T1') || conductingDevices.includes('D1')) {
-        // Positive cycle: Source(+) -> Line 1 -> T1 -> +DC Rail -> Load -> -DC Rail -> T2 -> Line 2 (jumper) -> Source(-)
-        return 'M 65,171 L 65,105 L 135,105 L 135,175 L 190,175 L 190,65 L 440,65 L 440,325 L 310,325 L 310,215 L 200,215 A 10 10 0 0 0 180,215 L 135,215 L 135,285 L 65,285 L 65,219';
+        // Positive cycle:
+        // 1. Source(+) to T1 Anode (stops at y=120)
+        // 2. T1 Cathode (starts at y=100) to Top Rail, across to Load Top
+        // 3. Load branch segments (stopping at R and L terminals)
+        // 4. Load bottom to T2 Anode (stops at y=290)
+        // 5. T2 Cathode (starts at y=270) through jumper back to Source(-)
+        return [
+          'M 65,171 L 65,105 L 135,105 L 135,175 L 190,175 L 190,120',
+          'M 190,100 L 190,65 L 440,65',
+          ...loadSegs,
+          'M 440,325 L 310,325 L 310,290',
+          'M 310,270 L 310,215 L 200,215 A 10 10 0 0 0 180,215 L 135,215 L 135,285 L 65,285 L 65,219'
+        ].join(' ');
       }
       if (conductingDevices.includes('T3') || conductingDevices.includes('D3') || conductingDevices.includes('T4') || conductingDevices.includes('D4')) {
-        // Negative cycle: Source(-) -> Line 2 (jumper) -> T3 -> +DC Rail -> Load -> -DC Rail -> T4 -> Line 1 -> Source(+)
-        return 'M 65,219 L 65,285 L 135,285 L 135,215 L 180,215 A 10 10 0 0 1 200,215 L 310,215 L 310,65 L 440,65 L 440,325 L 190,325 L 190,175 L 135,175 L 135,105 L 65,105 L 65,171';
+        // Negative cycle:
+        // 1. Source(-) through jumper to T3 Anode (stops at y=120)
+        // 2. T3 Cathode (starts at y=100) to Top Rail, across to Load Top
+        // 3. Load branch segments
+        // 4. Load bottom to T4 Anode (stops at y=290)
+        // 5. T4 Cathode (starts at y=270) back to Source(+)
+        return [
+          'M 65,219 L 65,285 L 135,285 L 135,215 L 180,215 A 10 10 0 0 1 200,215 L 310,215 L 310,120',
+          'M 310,100 L 310,65 L 440,65',
+          ...loadSegs,
+          'M 440,325 L 190,325 L 190,290',
+          'M 190,270 L 190,175 L 135,175 L 135,105 L 65,105 L 65,171'
+        ].join(' ');
       }
       if (conductingDevices.includes('FWD')) {
-        // Freewheeling loop: Load bottom -> FWD bottom -> UP FWD -> Load top -> DOWN Load
-        return 'M 440,325 L 375,325 L 375,65 L 440,65 L 440,325';
+        // Freewheeling loop: Load bottom -> FWD Anode, FWD Cathode -> Load top -> Load segments
+        return [
+          'M 440,325 L 375,325 L 375,290',
+          'M 375,100 L 375,65 L 440,65',
+          ...loadSegs
+        ].join(' ');
       }
     }
 
     // 1-PHASE HALF-WAVE
     if (!is3ph && !isFull) {
+      const loadSegs = this.getLoadPathSegments(430, 100, 280, load);
       if (conductingDevices.includes('T1') || conductingDevices.includes('D1')) {
-        return 'M 80,162 L 80,100 L 430,100 L 430,280 L 80,280 L 80,218';
+        return [
+          'M 80,162 L 80,100 L 190,100 L 220,100', // Stops at T1 anode lead
+          'M 240,100 L 430,100',                   // Starts at T1 cathode lead
+          ...loadSegs,
+          'M 430,280 L 80,280 L 80,218'
+        ].join(' ');
       }
       if (conductingDevices.includes('FWD')) {
-        return 'M 430,280 L 340,280 L 340,100 L 430,100 L 430,280';
+        return [
+          'M 430,280 L 340,280 L 340,210',
+          'M 340,170 L 340,100 L 430,100',
+          ...loadSegs
+        ].join(' ');
       }
     }
 
     // 3-PHASE HALF-WAVE
     if (is3ph && !isFull) {
+      const loadSegs = this.getLoadPathSegments(440, 110, 320, load);
+      let phaseLead = '';
       if (conductingDevices.includes('T1') || conductingDevices.includes('D1')) {
-        return 'M 64,110 L 121,110 L 330,110 L 440,110 L 440,320 L 35,320 L 35,190 L 60,190';
+        phaseLead = 'M 64,110 L 121,110 L 220,110 M 240,110 L 330,110';
+      } else if (conductingDevices.includes('T2') || conductingDevices.includes('D2')) {
+        phaseLead = 'M 64,190 L 121,190 L 220,190 M 240,190 L 330,190 L 330,110';
+      } else if (conductingDevices.includes('T3') || conductingDevices.includes('D3')) {
+        phaseLead = 'M 64,270 L 121,270 L 220,270 M 240,270 L 330,270 L 330,110';
       }
-      if (conductingDevices.includes('T2') || conductingDevices.includes('D2')) {
-        return 'M 64,190 L 121,190 L 330,190 L 330,110 L 440,110 L 440,320 L 35,320 L 35,190 L 60,190';
-      }
-      if (conductingDevices.includes('T3') || conductingDevices.includes('D3')) {
-        return 'M 64,270 L 121,270 L 330,270 L 330,110 L 440,110 L 440,320 L 35,320 L 35,190 L 60,190';
-      }
-      if (conductingDevices.includes('FWD')) {
-        return 'M 440,320 L 380,320 L 380,110 L 440,110 L 440,320';
+      if (phaseLead) {
+        return [
+          phaseLead,
+          'M 330,110 L 440,110',
+          ...loadSegs,
+          'M 440,320 L 35,320 L 35,190 L 60,190'
+        ].join(' ');
       }
     }
 
     // 3-PHASE FULL-WAVE (6-Pulse)
     if (is3ph && isFull) {
+      const loadSegs = this.getLoadPathSegments(450, 70, 310, load);
       if (conductingDevices.includes('FWD')) {
-        return 'M 450,310 L 395,310 L 395,70 L 450,70 L 450,310';
+        return [
+          'M 450,310 L 395,310 L 395,210',
+          'M 395,170 L 395,70 L 450,70',
+          ...loadSegs
+        ].join(' ');
       }
 
       const hasT1 = conductingDevices.includes('T1') || conductingDevices.includes('D1');
@@ -602,27 +682,63 @@ export class SchematicRenderer {
 
       // T1 (Phase A+) & T2 (Phase C-)
       if (hasT1 && hasT2) {
-        return 'M 64,130 L 100,130 L 100,180 L 160,180 L 160,70 L 450,70 L 450,310 L 340,310 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250';
+        return [
+          'M 64,130 L 100,130 L 100,180 L 160,180 L 160,120',
+          'M 160,100 L 160,70 L 450,70',
+          ...loadSegs,
+          'M 450,310 L 340,310 L 340,290',
+          'M 340,270 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250'
+        ].join(' ');
       }
       // T1 (Phase A+) & T6 (Phase B-)
       if (hasT1 && hasT6) {
-        return 'M 64,130 L 100,130 L 100,180 L 160,180 L 160,70 L 450,70 L 450,310 L 250,310 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190';
+        return [
+          'M 64,130 L 100,130 L 100,180 L 160,180 L 160,120',
+          'M 160,100 L 160,70 L 450,70',
+          ...loadSegs,
+          'M 450,310 L 250,310 L 250,290',
+          'M 250,270 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190'
+        ].join(' ');
       }
       // T3 (Phase B+) & T2 (Phase C-)
       if (hasT3 && hasT2) {
-        return 'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,70 L 450,70 L 450,310 L 340,310 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250';
+        return [
+          'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,120',
+          'M 250,100 L 250,70 L 450,70',
+          ...loadSegs,
+          'M 450,310 L 340,310 L 340,290',
+          'M 340,270 L 340,200 L 258,200 A 8 8 0 0 0 242,200 L 168,200 A 8 8 0 0 0 152,200 L 100,200 L 100,250 L 64,250'
+        ].join(' ');
       }
       // T3 (Phase B+) & T4 (Phase A-)
       if (hasT3 && hasT4) {
-        return 'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,70 L 450,70 L 450,310 L 160,310 L 160,180 L 100,180 L 100,130 L 64,130';
+        return [
+          'M 64,190 L 152,190 A 8 8 0 0 1 168,190 L 250,190 L 250,120',
+          'M 250,100 L 250,70 L 450,70',
+          ...loadSegs,
+          'M 450,310 L 160,310 L 160,290',
+          'M 160,270 L 160,180 L 100,180 L 100,130 L 64,130'
+        ].join(' ');
       }
       // T5 (Phase C+) & T4 (Phase A-)
       if (hasT5 && hasT4) {
-        return 'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,70 L 450,70 L 450,310 L 160,310 L 160,180 L 100,180 L 100,130 L 64,130';
+        return [
+          'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,120',
+          'M 340,100 L 340,70 L 450,70',
+          ...loadSegs,
+          'M 450,310 L 160,310 L 160,290',
+          'M 160,270 L 160,180 L 100,180 L 100,130 L 64,130'
+        ].join(' ');
       }
       // T5 (Phase C+) & T6 (Phase B-)
       if (hasT5 && hasT6) {
-        return 'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,70 L 450,70 L 450,310 L 250,310 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190';
+        return [
+          'M 64,250 L 100,250 L 100,200 L 152,200 A 8 8 0 0 1 168,200 L 242,200 A 8 8 0 0 1 258,200 L 340,200 L 340,120',
+          'M 340,100 L 340,70 L 450,70',
+          ...loadSegs,
+          'M 450,310 L 250,310 L 250,290',
+          'M 250,270 L 250,190 L 168,190 A 8 8 0 0 0 152,190 L 64,190'
+        ].join(' ');
       }
     }
 
@@ -631,8 +747,9 @@ export class SchematicRenderer {
 
   /**
    * Updates visual conduction state (illuminates active devices and current loops)
+   * Stops animation when paused and adjusts speed with simulation speed.
    */
-  updateConductionState(conductingDevices = []) {
+  updateConductionState(conductingDevices = [], isPlaying = true, speed = 1.0) {
     if (!this.currentSvg) return;
 
     // Reset all devices
@@ -658,9 +775,23 @@ export class SchematicRenderer {
 
     if (basePathEl) {
       basePathEl.setAttribute('d', pathD);
+      basePathEl.style.display = (!conductingDevices || conductingDevices.length === 0 || !pathD) ? 'none' : '';
     }
     if (flowPathEl) {
       flowPathEl.setAttribute('d', pathD);
+      if (!conductingDevices || conductingDevices.length === 0 || !pathD) {
+        flowPathEl.style.display = 'none';
+      } else {
+        flowPathEl.style.display = '';
+
+        if (!isPlaying) {
+          flowPathEl.style.animationPlayState = 'paused';
+        } else {
+          flowPathEl.style.animationPlayState = 'running';
+          const dur = 0.6 / Math.max(0.1, speed);
+          flowPathEl.style.animationDuration = `${dur.toFixed(3)}s`;
+        }
+      }
     }
   }
 }

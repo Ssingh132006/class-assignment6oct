@@ -83,7 +83,6 @@ class RectifierStudioApp {
     this.circuitHeaderTitle = document.getElementById('circuitHeaderTitle');
     this.circuitHeaderSubtitle = document.getElementById('circuitHeaderSubtitle');
     this.conductingDevicesPill = document.getElementById('conductingDevicesPill');
-    this.conductionPathDesc = document.getElementById('conductionPathDesc');
     this.circuitAngleTag = document.getElementById('circuitAngleTag');
 
     // Oscilloscope readout
@@ -214,6 +213,7 @@ class RectifierStudioApp {
       this.state.isPlaying = !this.state.isPlaying;
       this.btnPlayPause.textContent = this.state.isPlaying ? '⏸' : '▶';
       this.btnPlayPause.classList.toggle('playing', this.state.isPlaying);
+      this.updateFrame();
       this.showToast(this.state.isPlaying ? 'Simulation Resumed' : 'Simulation Paused');
     });
 
@@ -247,6 +247,7 @@ class RectifierStudioApp {
       const idx = speeds.indexOf(this.state.speed);
       this.state.speed = speeds[(idx + 1) % speeds.length];
       this.speedIndicator.textContent = `${this.state.speed}x`;
+      this.updateFrame();
       this.showToast(`Speed set to ${this.state.speed}x`);
     });
 
@@ -486,15 +487,12 @@ class RectifierStudioApp {
 
     // Update schematic active paths
     if (this.schematic) {
-      this.schematic.updateConductionState(pt.conductingDevices);
+      this.schematic.updateConductionState(pt.conductingDevices, this.state.isPlaying, this.state.speed);
     }
 
     // Update tracking tags
     if (this.conductingDevicesPill) {
       this.conductingDevicesPill.textContent = pt.conductingDevices.length > 0 ? pt.conductingDevices.join(', ') : 'None (Off)';
-    }
-    if (this.conductionPathDesc) {
-      this.conductionPathDesc.textContent = pt.activePath;
     }
     if (this.circuitAngleTag) {
       this.circuitAngleTag.textContent = `${(this.state.currentAngle % 360).toFixed(1)}°`;
