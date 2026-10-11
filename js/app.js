@@ -39,6 +39,14 @@ class RectifierStudioApp {
     this.bindEvents();
     this.updateAll();
     this.startAnimationLoop();
+
+    // Secondary resize/render pass to ensure canvas dimensions fit DOM layout
+    setTimeout(() => {
+      if (this.oscilloscope) {
+        this.oscilloscope.resize();
+        this.updateSimulation();
+      }
+    }, 50);
   }
 
   initElements() {
@@ -95,9 +103,9 @@ class RectifierStudioApp {
     // Metrics
     this.metricVdc = document.getElementById('metricVdc');
     this.metricVdcFormula = document.getElementById('metricVdcFormula');
-    this.metricVinRms = document.getElementById('metricVinRms');
+    this.metricVinRms = document.getElementById('metricVinRms') || document.getElementById('metricVrms');
     this.metricIdc = document.getElementById('metricIdc');
-    this.metricVm = document.getElementById('metricVm');
+    this.metricVm = document.getElementById('metricVm') || document.getElementById('metricIrms');
     this.metricRf = document.getElementById('metricRf');
     this.metricFf = document.getElementById('metricFf');
     this.metricEff = document.getElementById('metricEff');
@@ -405,9 +413,9 @@ class RectifierStudioApp {
     const vinPill = document.querySelector('.trace-pill[data-trace="vin"]');
     if (vinPill) {
       if (this.state.phase === '3ph') {
-        vinPill.innerHTML = '<span class="trace-indicator"></span> v<sub>A</sub>, v<sub>B</sub>, v<sub>C</sub> (3-Phase)';
+        vinPill.innerHTML = '<span class="trace-indicator"></span><span class="pill-label">v<sub>A</sub>, v<sub>B</sub>, v<sub>C</sub> (3-Phase)</span>';
       } else {
-        vinPill.innerHTML = '<span class="trace-indicator"></span> v<sub>s</sub>(t) Input AC';
+        vinPill.innerHTML = '<span class="trace-indicator"></span><span class="pill-label">v<sub>s</sub>(t) Input AC</span>';
       }
     }
 
@@ -416,22 +424,24 @@ class RectifierStudioApp {
 
     // Update theory & equations with proper mathematical formatting
     this.renderMath(this.theoryVdcEq, info.vdcFormula);
-    this.theoryVdcNotes.textContent = info.description;
+    if (this.theoryVdcNotes) this.theoryVdcNotes.textContent = info.description;
     this.renderMath(this.theoryVrmsEq, info.vrmsFormula);
     this.renderMath(this.theoryPivEq, `\\text{PIV} = ${info.pivFormula}`);
 
     // Populate intervals table
-    this.intervalsTableBody.innerHTML = '';
-    info.intervals.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="color: var(--color-accent); font-weight: 600;">${row.range}</td>
-        <td style="color: var(--color-emerald); font-weight: 600;">${row.state}</td>
-        <td style="color: #38bdf8; font-weight: 600;">${row.vout}</td>
-        <td>${row.comment}</td>
-      `;
-      this.intervalsTableBody.appendChild(tr);
-    });
+    if (this.intervalsTableBody) {
+      this.intervalsTableBody.innerHTML = '';
+      info.intervals.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="color: var(--color-accent); font-weight: 600;">${row.range}</td>
+          <td style="color: var(--color-emerald); font-weight: 600;">${row.state}</td>
+          <td style="color: #38bdf8; font-weight: 600;">${row.vout}</td>
+          <td>${row.comment}</td>
+        `;
+        this.intervalsTableBody.appendChild(tr);
+      });
+    }
 
     this.updateSimulation();
   }
@@ -441,62 +451,85 @@ class RectifierStudioApp {
     this.currentSeries = this.mathEngine.generateSeries(2, 720);
     this.currentMetrics = this.mathEngine.calculateMetrics();
 
-    // Update metrics cards
-    this.metricVdc.textContent = this.currentMetrics.Vdc;
+    // Update metrics cards with defensive checks
+    if (this.metricVdc) this.metricVdc.textContent = this.currentMetrics.Vdc;
     if (this.metricVinRms) this.metricVinRms.textContent = this.state.Vrms.toFixed(1);
-    this.metricIdc.textContent = this.currentMetrics.Idc;
+    if (this.metricIdc) this.metricIdc.textContent = this.currentMetrics.Idc;
     const vm = (Math.SQRT2 * this.state.Vrms).toFixed(1);
     if (this.metricVm) this.metricVm.textContent = vm;
-    this.metricRf.textContent = this.currentMetrics.RF;
-    this.metricFf.textContent = this.currentMetrics.FF;
-    this.metricEff.textContent = this.currentMetrics.efficiency;
-    this.metricPiv.textContent = this.currentMetrics.piv;
+    if (this.metricRf) this.metricRf.textContent = this.currentMetrics.RF;
+    if (this.metricFf) this.metricFf.textContent = this.currentMetrics.FF;
+    if (this.metricEff) this.metricEff.textContent = this.currentMetrics.efficiency;
+    if (this.metricPiv) this.metricPiv.textContent = this.currentMetrics.piv;
 
-    const analyticalVdc = this.mathEngine.getAnalyticalVdc().toFixed(1);
-    this.metricVdcFormula.textContent = `Formula: ${analyticalVdc} V`;
+    if (this.metricVdcFormula) {
+      const analyticalVdc = this.mathEngine.getAnalyticalVdc().toFixed(1);
+      this.metricVdcFormula.textContent = `Formula: ${analyticalVdc} V`;
+    }
 
     // Render oscilloscope & harmonics
-    this.oscilloscope.setIs3Phase(this.state.phase === '3ph');
-    this.oscilloscope.render(this.currentSeries, this.currentMetrics);
-    this.harmonics.render(this.currentSeries.vout);
+    if (this.oscilloscope) {
+      this.oscilloscope.setIs3Phase(this.state.phase === '3ph');
+      this.oscilloscope.render(this.currentSeries, this.currentMetrics);
+    }
+    if (this.harmonics) {
+      this.harmonics.render(this.currentSeries.vout);
+    }
 
     this.updateFrame();
   }
 
   updateFrame() {
+    if (!this.currentSeries) return;
     const rad = (this.state.currentAngle * Math.PI) / 180;
     const pt = this.mathEngine.getInstantaneous(rad);
 
     // Update schematic active paths
-    this.schematic.updateConductionState(pt.conductingDevices);
+    if (this.schematic) {
+      this.schematic.updateConductionState(pt.conductingDevices);
+    }
 
     // Update tracking tags
-    this.conductingDevicesPill.textContent = pt.conductingDevices.length > 0 ? pt.conductingDevices.join(', ') : 'None (Off)';
-    this.conductionPathDesc.textContent = pt.activePath;
-    this.circuitAngleTag.textContent = `${(this.state.currentAngle % 360).toFixed(1)}°`;
+    if (this.conductingDevicesPill) {
+      this.conductingDevicesPill.textContent = pt.conductingDevices.length > 0 ? pt.conductingDevices.join(', ') : 'None (Off)';
+    }
+    if (this.conductionPathDesc) {
+      this.conductionPathDesc.textContent = pt.activePath;
+    }
+    if (this.circuitAngleTag) {
+      this.circuitAngleTag.textContent = `${(this.state.currentAngle % 360).toFixed(1)}°`;
+    }
 
     // Update scrubber display
     const period = 1 / this.state.freq;
     const tMs = ((this.state.currentAngle / 360) * period * 1000).toFixed(1);
-    this.scrubberTimeDisplay.textContent = `${Math.round(this.state.currentAngle)}° (${tMs}ms)`;
+    if (this.scrubberTimeDisplay) {
+      this.scrubberTimeDisplay.textContent = `${Math.round(this.state.currentAngle)}° (${tMs}ms)`;
+    }
 
     // Update oscilloscope vertical cursor line
-    this.oscilloscope.setCurrentMarkerAngle(this.state.currentAngle);
-    this.oscilloscope.render(this.currentSeries, this.currentMetrics);
+    if (this.oscilloscope) {
+      this.oscilloscope.setCurrentMarkerAngle(this.state.currentAngle);
+      this.oscilloscope.render(this.currentSeries, this.currentMetrics);
+    }
   }
 
   startAnimationLoop() {
     const loop = (timestamp) => {
-      const dt = (timestamp - this.lastFrameTime) / 1000;
-      this.lastFrameTime = timestamp;
+      try {
+        const dt = (timestamp - this.lastFrameTime) / 1000;
+        this.lastFrameTime = timestamp;
 
-      if (this.state.isPlaying) {
-        // At 50Hz, one cycle (360 deg) is 20ms => 18,000 deg/sec
-        // We scale visual simulation speed smoothly
-        const degPerSec = 180 * this.state.speed;
-        this.state.currentAngle = (this.state.currentAngle + degPerSec * dt) % 720;
-        this.timeScrubber.value = Math.round(this.state.currentAngle);
-        this.updateFrame();
+        if (this.state.isPlaying) {
+          const degPerSec = 180 * this.state.speed;
+          this.state.currentAngle = (this.state.currentAngle + degPerSec * dt) % 720;
+          if (this.timeScrubber) {
+            this.timeScrubber.value = Math.round(this.state.currentAngle);
+          }
+          this.updateFrame();
+        }
+      } catch (err) {
+        console.warn('Animation loop step warning:', err);
       }
 
       this.animationFrameId = requestAnimationFrame(loop);
@@ -547,6 +580,10 @@ class RectifierStudioApp {
 }
 
 // Start application when DOM is ready
-window.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', () => {
+    window.app = new RectifierStudioApp();
+  });
+} else {
   window.app = new RectifierStudioApp();
-});
+}

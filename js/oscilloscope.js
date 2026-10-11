@@ -28,8 +28,8 @@ export class OscilloscopeRenderer {
   resize() {
     const rect = this.canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const w = rect.width || this.canvas.parentElement?.clientWidth || 600;
-    const h = rect.height || this.canvas.parentElement?.clientHeight || 380;
+    const w = (rect.width > 20 ? rect.width : (this.canvas.parentElement?.clientWidth || 600));
+    const h = (rect.height > 20 ? rect.height : (this.canvas.parentElement?.clientHeight || 380));
 
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
@@ -166,10 +166,13 @@ export class OscilloscopeRenderer {
    * Main render method
    */
   render(series, metrics = {}) {
-    if (!series || !series.angles.length) return;
+    if (!series || !series.angles || !series.angles.length) return;
+    if (!this.width || !this.height || this.canvas.width === 0 || this.canvas.height === 0) {
+      this.resize();
+    }
     const ctx = this.ctx;
-    const w = this.width;
-    const h = this.height;
+    const w = this.width || 600;
+    const h = this.height || 380;
 
     // Determine peak voltage scale dynamically so 3-phase line voltages fit nicely
     let maxV = 360;

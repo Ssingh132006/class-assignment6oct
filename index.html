@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/controls.css">
-  <link rel="stylesheet" href="css/circuit.css">
-  <link rel="stylesheet" href="css/oscilloscope.css">
-  <link rel="stylesheet" href="css/metrics.css">
+  <link rel="stylesheet" href="css/main.css?v=2.2">
+  <link rel="stylesheet" href="css/controls.css?v=2.2">
+  <link rel="stylesheet" href="css/circuit.css?v=2.2">
+  <link rel="stylesheet" href="css/oscilloscope.css?v=2.2">
+  <link rel="stylesheet" href="css/metrics.css?v=2.2">
   <!-- KaTeX for crisp mathematical formulas -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -242,19 +242,19 @@
           <div class="trace-legend-bar">
             <div class="trace-toggles">
               <button class="trace-pill active" data-trace="vin" title="Toggle Input Voltage Trace">
-                <span class="trace-indicator"></span> v<sub>s</sub>(t) Input AC
+                <span class="trace-indicator"></span><span class="pill-label">v<sub>s</sub>(t) Input AC</span>
               </button>
               <button class="trace-pill active" data-trace="gate" id="traceGateBtn" title="Toggle Gate Firing Pulses">
-                <span class="trace-indicator"></span> i<sub>g</sub>(t) Gate Pulses
+                <span class="trace-indicator"></span><span class="pill-label">i<sub>g</sub>(t) Gate Pulses</span>
               </button>
               <button class="trace-pill active" data-trace="vout" title="Toggle Output Voltage Trace">
-                <span class="trace-indicator"></span> v<sub>o</sub>(t) Rectified Output
+                <span class="trace-indicator"></span><span class="pill-label">v<sub>o</sub>(t) Rectified Output</span>
               </button>
               <button class="trace-pill active" data-trace="iout" title="Toggle Load Current Trace">
-                <span class="trace-indicator"></span> i<sub>o</sub>(t) Load Current
+                <span class="trace-indicator"></span><span class="pill-label">i<sub>o</sub>(t) Load Current</span>
               </button>
               <button class="trace-pill" data-trace="vt" title="Toggle Device Voltage Drop Trace">
-                <span class="trace-indicator"></span> v<sub>T1</sub>(t) PIV Monitor
+                <span class="trace-indicator"></span><span class="pill-label">v<sub>T1</sub>(t) PIV Monitor</span>
               </button>
             </div>
           </div>
@@ -477,6 +477,6 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Application Logic Modules -->
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=2.2"></script>
 </body>
 </html>

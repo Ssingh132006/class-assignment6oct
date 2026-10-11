@@ -32,8 +32,8 @@
 .trace-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.6rem;
+  gap: 0.45rem;
+  padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -44,6 +44,24 @@
   color: var(--text-muted);
   user-select: none;
   transition: var(--transition);
+}
+
+.pill-label {
+  display: inline;
+  white-space: nowrap;
+  letter-spacing: normal;
+}
+
+.pill-label sub,
+.readout-label sub,
+.metric-symbol sub,
+.metric-formula-subtext sub,
+sub {
+  font-size: 0.72em;
+  line-height: 0;
+  vertical-align: baseline;
+  position: relative;
+  bottom: -0.22em;
 }
 
 .trace-pill:hover {

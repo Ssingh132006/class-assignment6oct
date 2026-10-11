@@ -182,7 +182,7 @@ export class SchematicRenderer {
       <g id="ac-source" transform="translate(80, 190)">
         <circle cx="0" cy="0" r="28" fill="#1e293b" stroke="#00f2fe" stroke-width="2.5" />
         <path d="M -12,0 Q -6,-14 0,0 T 12,0" fill="none" stroke="#00f2fe" stroke-width="2.2" />
-        <text x="0" y="44" class="source-label" text-anchor="middle">v<tspan baseline-shift="sub" font-size="0.75em">s</tspan>(t)</text>
+        <text x="0" y="44" class="source-label" text-anchor="middle">v<tspan dy="3" font-size="9">s</tspan><tspan dy="-3">(t)</tspan></text>
         <text x="-40" y="-12" fill="#94a3b8" font-size="11" font-family="monospace">+</text>
         <text x="-40" y="24" fill="#94a3b8" font-size="11" font-family="monospace">-</text>
       </g>
@@ -235,7 +235,7 @@ export class SchematicRenderer {
       <g id="ac-source" transform="translate(65, 190)">
         <circle cx="0" cy="0" r="26" fill="#1e293b" stroke="#00f2fe" stroke-width="2.5" />
         <path d="M -11,0 Q -5,-13 0,0 T 11,0" fill="none" stroke="#00f2fe" stroke-width="2.2" />
-        <text x="0" y="42" class="source-label" text-anchor="middle">v<tspan baseline-shift="sub" font-size="0.75em">s</tspan>(t)</text>
+        <text x="0" y="42" class="source-label" text-anchor="middle">v<tspan dy="3" font-size="9">s</tspan><tspan dy="-3">(t)</tspan></text>
       </g>
 
       <!-- AC Input Lines to Bridge Midpoints -->
