@@ -244,29 +244,51 @@ export class OscilloscopeRenderer {
       }
     }
 
-    // 2. Gate Firing Pulses (Sharp Spikes)
+    // 2. Gate Firing Pulses (Rectangular Blocks matching reference slide)
     if (this.visibleTraces.gate && series.gate) {
       ctx.save();
-      ctx.strokeStyle = '#c084fc';
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = 'rgba(192, 132, 252, 0.9)';
+      const pulseH = maxV * 0.28;
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.45)';
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
       ctx.shadowBlur = 8;
-      ctx.beginPath();
+
+      let inPulse = false;
+      let pulseStart = 0;
+
       for (let i = 0; i < series.angles.length; i++) {
-        const pulseVal = series.gate[i] ? (maxV * 0.3) : 0;
-        const [x, y] = toScreen(series.angles[i], pulseVal);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        const isPulse = series.gate[i] === 1;
+        if (isPulse && !inPulse) {
+          inPulse = true;
+          pulseStart = series.angles[i];
+        } else if (!isPulse && inPulse) {
+          inPulse = false;
+          const pulseEnd = series.angles[i - 1];
+          const [x1, y1] = toScreen(pulseStart, pulseH);
+          const [x2, y0] = toScreen(pulseEnd, 0);
+          const wBox = Math.max(10, x2 - x1);
+          ctx.fillRect(x1, y1, wBox, y0 - y1);
+          ctx.strokeRect(x1, y1, wBox, y0 - y1);
+        }
       }
-      ctx.stroke();
+      if (inPulse) {
+        const [x1, y1] = toScreen(pulseStart, pulseH);
+        const [x2, y0] = toScreen(series.angles[series.angles.length - 1], 0);
+        const wBox = Math.max(10, x2 - x1);
+        ctx.fillRect(x1, y1, wBox, y0 - y1);
+        ctx.strokeRect(x1, y1, wBox, y0 - y1);
+      }
       ctx.restore();
     }
 
-    // 3. Device Voltage Drop v_T (PIV Monitor)
+    // 3. Device Voltage Drop v_T (PIV Monitor - Purple matching reference slide)
     if (this.visibleTraces.vt && series.vt) {
       ctx.save();
-      ctx.strokeStyle = '#f43f5e';
-      ctx.lineWidth = 1.8;
-      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = '#c084fc';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
+      ctx.shadowBlur = 6;
       ctx.beginPath();
       for (let i = 0; i < series.angles.length; i++) {
         const [x, y] = toScreen(series.angles[i], series.vt[i]);
@@ -317,7 +339,7 @@ export class OscilloscopeRenderer {
       }
     }
 
-    // 5. Output Current i_o (Radiant Amber)
+    // 5. Output Current i_o (Radiant Amber - Balanced scale sitting below Vo)
     if (this.visibleTraces.iout) {
       ctx.save();
       ctx.strokeStyle = '#f59e0b';
@@ -326,8 +348,8 @@ export class OscilloscopeRenderer {
       ctx.shadowBlur = 8;
       ctx.beginPath();
 
-      // Scale current to display cleanly on the same axis (scale: 12V per Ampere)
-      const currentScale = 14;
+      // Scale current to display cleanly on the same axis (scale: 4.8V per Ampere)
+      const currentScale = 4.8;
       for (let i = 0; i < series.angles.length; i++) {
         const [x, y] = toScreen(series.angles[i], series.iout[i] * currentScale);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);

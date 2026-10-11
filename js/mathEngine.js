@@ -143,17 +143,12 @@ export class MathEngine {
       // --- 1-PHASE FULL-WAVE BRIDGE ---
       else {
         const pulseWidth = 6;
-        const p1 = isThy && Math.abs(deg - alphaDeg) < pulseWidth;
-        const p2 = isThy && Math.abs(deg - (180 + alphaDeg)) < pulseWidth;
+        const p1 = isThy && (Math.abs(deg - alphaDeg) < pulseWidth || Math.abs(deg - (360 + alphaDeg)) < pulseWidth);
+        const p2 = isThy && (Math.abs(deg - (180 + alphaDeg)) < pulseWidth || Math.abs(deg - (540 + alphaDeg)) < pulseWidth);
         gatePulses = isThy ? [
           { id: 'T1, T2', angle: alphaDeg, active: p1 },
           { id: 'T3, T4', angle: 180 + alphaDeg, active: p2 }
         ] : [];
-
-        const betaDeg = isRL ? this.getExtinctionBeta(alphaDeg) : 180;
-        const p1End = Math.min(betaDeg, 180 + alphaDeg);
-        const p2Start = 180 + alphaDeg;
-        const p2End = 180 + p1End;
 
         if (hasFWD && isRL) {
           // With Freewheeling Diode: negative voltage clamped to 0V
@@ -161,48 +156,37 @@ export class MathEngine {
             vout = vin;
             conductingDevices = isThy ? ['T1', 'T2'] : ['D1', 'D2'];
             activePath = `Source(+) → ${conductingDevices[0]} → Load → ${conductingDevices[1]} → Source(-)`;
-            vt = isThy ? 1.2 : 0.7;
+            vt = 0;
           } else if (deg >= 180 + alphaDeg && deg < 360) {
             vout = -vin;
             conductingDevices = isThy ? ['T3', 'T4'] : ['D3', 'D4'];
             activePath = `Source(-) → ${conductingDevices[0]} → Load → ${conductingDevices[1]} → Source(+)`;
             vt = vin;
-          } else if ((deg >= 180 && deg < 180 + alphaDeg) || (deg >= 0 && deg < alphaDeg)) {
-            vout = 0;
+          } else {
+            vout = 0; // Clamped by FWD
             conductingDevices = ['FWD'];
             activePath = 'Freewheeling via FWD (v_o clamped to 0V)';
-            vt = vin;
-          } else {
-            vout = 0;
-            conductingDevices = [];
-            activePath = 'Discontinuous Blocking (All Devices OFF)';
             vt = vin;
           }
         } else if (isRL) {
           // RL load WITHOUT Freewheeling Diode:
-          // Negative voltage persists ONLY for a short duration while inductor discharges (until betaDeg)
-          const inPulse1 = deg >= alphaDeg && deg < p1End;
-          const inPulse2 = (deg >= p2Start && deg < Math.min(360, p2End)) ||
-                           (p2End > 360 && deg >= 0 && deg < (p2End - 360));
+          // CONTINUOUS CONDUCTION MODE (Large L & small alpha) as shown in reference slide
+          const inPair1 = deg >= alphaDeg && deg < (180 + alphaDeg);
 
-          if (inPulse1) {
-            vout = vin; // Positive for [alpha, 180], negative for [180, p1End]
+          if (inPair1) {
+            vout = vin; // Positive for [alpha, 180], negative for [180, 180+alpha]
             conductingDevices = isThy ? ['T1', 'T2'] : ['D1', 'D2'];
             activePath = deg < 180 
               ? `Source(+) → ${conductingDevices[0]} → Load → ${conductingDevices[1]} → Source(-)`
-              : `Inductive Kickback: Load → ${conductingDevices[1]} → Source(-) → ${conductingDevices[0]}`;
-            vt = isThy ? 1.2 : 0.7;
-          } else if (inPulse2) {
-            vout = -vin; // Positive for [180+alpha, 360], negative for wrapped interval
-            conductingDevices = isThy ? ['T3', 'T4'] : ['D3', 'D4'];
-            activePath = deg >= p2Start
-              ? `Source(-) → ${conductingDevices[0]} → Load → ${conductingDevices[1]} → Source(+)`
-              : `Inductive Kickback: Load → ${conductingDevices[1]} → Source(+) → ${conductingDevices[0]}`;
-            vt = vin;
+              : `Inductive Energy Recovery: Load → ${conductingDevices[1]} → Source(-) → Source(+) → ${conductingDevices[0]}`;
+            vt = 0; // Conducting: voltage across T1 is 0V
           } else {
-            vout = 0;
-            conductingDevices = [];
-            activePath = 'Current Extinguished (All Devices OFF)';
+            vout = -vin; // Positive for [180+alpha, 360], negative for [0, alpha]
+            conductingDevices = isThy ? ['T3', 'T4'] : ['D3', 'D4'];
+            activePath = deg >= (180 + alphaDeg)
+              ? `Source(-) → ${conductingDevices[0]} → Load → ${conductingDevices[1]} → Source(+)`
+              : `Inductive Energy Recovery: Load → ${conductingDevices[1]} → Source(+) → Source(-) → ${conductingDevices[0]}`;
+            // Across T1 while T3, T4 conduct: v_T1 = v_s
             vt = vin;
           }
         } else {
@@ -211,7 +195,7 @@ export class MathEngine {
             vout = vin;
             conductingDevices = isThy ? ['T1', 'T2'] : ['D1', 'D2'];
             activePath = `${conductingDevices.join(' & ')} Conducting`;
-            vt = isThy ? 1.2 : 0.7;
+            vt = 0;
           } else if (deg >= 180 + alphaDeg && deg < 360) {
             vout = -vin;
             conductingDevices = isThy ? ['T3', 'T4'] : ['D3', 'D4'];
@@ -369,33 +353,38 @@ export class MathEngine {
       const tanPhi = Math.tan(phi);
 
       if (!is3ph && isFull) {
-        // 1-Phase Full-Wave RL
-        const betaDeg = isRL ? this.getExtinctionBeta(alphaDeg) : 180;
-        const p1End = Math.min(betaDeg, 180 + alphaDeg);
-        const p2Start = 180 + alphaDeg;
-        const p2End = 180 + p1End;
-
-        const isHalf1 = deg >= alphaDeg && deg < p1End;
-        const isHalf2 = (deg >= p2Start && deg < Math.min(360, p2End)) ||
-                        (p2End > 360 && deg >= 0 && deg < (p2End - 360));
-
-        if (isHalf1) {
-          const thetaLocal = (deg - alphaDeg) * DEG2RAD;
-          const thetaAbs = deg * DEG2RAD;
-          iout = (Vm / Z) * (Math.sin(thetaAbs - phi) - Math.sin(alphaRad - phi) * Math.exp(-thetaLocal / tanPhi));
-        } else if (isHalf2) {
-          const degNorm = deg < 180 ? deg + 180 : deg;
-          const thetaLocal = (degNorm - p2Start) * DEG2RAD;
-          const thetaAbs = (degNorm - 180) * DEG2RAD;
-          iout = (Vm / Z) * (Math.sin(thetaAbs - phi) - Math.sin(alphaRad - phi) * Math.exp(-thetaLocal / tanPhi));
-        } else if (hasFWD && ((deg >= 180 && deg < 180 + alphaDeg) || (deg >= 0 && deg < alphaDeg))) {
-          const decayDeg = deg >= 180 ? deg - 180 : deg + 180;
-          const i180 = (Vm / Z) * (Math.sin(Math.PI - phi) - Math.sin(alphaRad - phi) * Math.exp(-((180 - alphaDeg) * DEG2RAD) / tanPhi));
-          iout = Math.max(0, i180) * Math.exp(-(decayDeg * DEG2RAD) / tanPhi);
+        if (hasFWD) {
+          // With Freewheeling Diode:
+          const avgV = (Vm / Math.PI) * (1 + Math.cos(alphaRad));
+          const avgI = Math.max(0.1, (avgV - this.E) / this.R);
+          const ripple = 0.15 * avgI * Math.sin(2 * (normTheta - alphaRad));
+          iout = Math.max(0.05, avgI + ripple);
+        } else if (isRL) {
+          // Continuous Conduction Mode (Large L & small alpha) as shown in reference slide:
+          const avgV = (2 * Vm / Math.PI) * Math.cos(alphaRad);
+          const avgI = Math.max(0.2, (avgV - this.E) / this.R);
+          // Continuous ripple: ramps up while v_o > 0, ramps down while v_o < 0
+          const rippleAmp = avgI * 0.18;
+          let r = 0;
+          if (deg >= alphaDeg && deg < 180) {
+            const u = (deg - alphaDeg) / (180 - alphaDeg);
+            r = -rippleAmp + 2 * rippleAmp * u;
+          } else if (deg >= 180 && deg < 180 + alphaDeg) {
+            const u = (deg - 180) / Math.max(1, alphaDeg);
+            r = rippleAmp - 2 * rippleAmp * u;
+          } else if (deg >= 180 + alphaDeg && deg < 360) {
+            const u = (deg - (180 + alphaDeg)) / (180 - alphaDeg);
+            r = -rippleAmp + 2 * rippleAmp * u;
+          } else {
+            // [0, alphaDeg]
+            const u = deg / Math.max(1, alphaDeg);
+            r = rippleAmp - 2 * rippleAmp * u;
+          }
+          iout = Math.max(0.05, avgI + r);
         } else {
-          iout = 0;
+          // Pure R load
+          iout = Math.max(0, vout / this.R);
         }
-        iout = Math.max(0, iout);
       } else if (!is3ph && !isFull) {
         // 1-Phase Half-Wave RL
         const betaDeg = isRL ? this.getExtinctionBeta(alphaDeg) : 180;
@@ -463,10 +452,7 @@ export class MathEngine {
       } else {
         // 1-ph Full
         if (isRL && this.load !== 'RL_FWD') {
-          const beta = this.getExtinctionBeta(alphaDeg);
-          const betaEff = Math.min(beta, 180 + alphaDeg);
-          const betaRad = betaEff * DEG2RAD;
-          return (Vm / Math.PI) * (Math.cos(alphaRad) - Math.cos(betaRad));
+          return (2 * Vm / Math.PI) * Math.cos(alphaRad);
         } else {
           return (Vm / Math.PI) * (1 + Math.cos(alphaRad));
         }

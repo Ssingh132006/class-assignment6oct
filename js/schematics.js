@@ -21,20 +21,22 @@ export class SchematicRenderer {
    * Draws a vertical diode or thyristor pointing UPWARDS (Anode at bottom, Cathode at top)
    * Connects seamlessly between (x, yBottom) and (x, yTop)
    */
-  verticalDevice(id, label, x, yTop, yBottom, isThyristor = false) {
+  verticalDevice(id, label, x, yTop, yBottom, isThyristor = false, labelSide = 'left') {
     const yMid = (yTop + yBottom) / 2;
-    const bodyH = 22; // total symbol height
     const triTop = yMid - 10;
     const triBot = yMid + 10;
 
     let gateSvg = '';
     if (isThyristor) {
       gateSvg = `
-        <polyline points="${x + 9},${yMid - 4} ${x + 20},${yMid + 2} ${x + 20},${yMid + 10}" 
+        <polyline points="${x + 9},${yMid - 3} ${x + 20},${yMid + 2} ${x + 20},${yMid + 10}" 
                   class="device-gate" id="gate-wire-${id}" />
         <text x="${x + 24}" y="${yMid + 8}" class="gate-tag">G</text>
       `;
     }
+
+    const labelX = labelSide === 'left' ? x - 18 : x + (isThyristor ? 38 : 18);
+    const labelAnchor = labelSide === 'left' ? 'end' : 'start';
 
     return `
       <g id="dev-${id}" class="device-group" data-device-id="${id}" data-device-type="${isThyristor ? 'Thyristor (SCR)' : 'Diode'}">
@@ -54,7 +56,7 @@ export class SchematicRenderer {
         ${gateSvg}
 
         <!-- Label -->
-        <text x="${x - 18}" y="${yMid + 4}" class="device-label" text-anchor="end">${label}</text>
+        <text x="${labelX}" y="${yMid + 4}" class="device-label" text-anchor="${labelAnchor}">${label}</text>
       </g>
     `;
   }
@@ -101,46 +103,105 @@ export class SchematicRenderer {
   }
 
   /**
-   * Helper to draw Load Block (R, L, E) between (x, yTop) and (x, yBottom)
+   * Helper to draw Load Branch (R, L, E) between (x, yTop) and (x, yBottom)
+   * Standard textbook symbols directly on the circuit branch without bulky boxes
    */
   loadBlock(x, yTop, yBottom, loadType) {
-    const height = yBottom - yTop - 40;
-    const boxY = yTop + 20;
+    if (loadType === 'R') {
+      const yMid = (yTop + yBottom) / 2;
+      return `
+        <g id="load-group">
+          <!-- Top lead -->
+          <line x1="${x}" y1="${yTop}" x2="${x}" y2="${yMid - 50}" class="wire-base" />
+          <!-- Resistor Zig-Zag -->
+          <path d="M ${x},${yMid - 50} 
+                   L ${x},${yMid - 40} 
+                   L ${x + 12},${yMid - 30} 
+                   L ${x - 12},${yMid - 15} 
+                   L ${x + 12},${yMid} 
+                   L ${x - 12},${yMid + 15} 
+                   L ${x + 12},${yMid + 30} 
+                   L ${x},${yMid + 40} 
+                   L ${x},${yMid + 50}" 
+                fill="none" stroke="#00f2fe" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          <!-- Resistor Label -->
+          <text x="${x + 22}" y="${yMid + 5}" class="load-text" font-size="16" font-weight="bold" fill="#00f2fe" text-anchor="start">R</text>
+          <!-- Bottom lead -->
+          <line x1="${x}" y1="${yMid + 50}" x2="${x}" y2="${yBottom}" class="wire-base" />
+          <!-- Polarity -->
+          <text x="${x - 18}" y="${yTop + 20}" fill="#10b981" font-weight="bold" font-family="monospace" font-size="14">+</text>
+          <text x="${x - 18}" y="${yBottom - 10}" fill="#38bdf8" font-weight="bold" font-family="monospace" font-size="14">-</text>
+        </g>
+      `;
+    }
 
+    if (loadType === 'RL' || loadType === 'RL_FWD') {
+      return `
+        <g id="load-group">
+          <!-- Top lead to Resistor -->
+          <line x1="${x}" y1="${yTop}" x2="${x}" y2="100" class="wire-base" />
+          <!-- Resistor Zig-Zag (y = 100 to 165) -->
+          <path d="M ${x},100 
+                   L ${x},108 
+                   L ${x + 12},116 
+                   L ${x - 12},128 
+                   L ${x + 12},140 
+                   L ${x - 12},152 
+                   L ${x},159 
+                   L ${x},165" 
+                fill="none" stroke="#00f2fe" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          <text x="${x + 22}" y="137" class="load-text" font-size="16" font-weight="bold" fill="#00f2fe" text-anchor="start">R</text>
+          
+          <!-- Connecting wire between R and L -->
+          <line x1="${x}" y1="165" x2="${x}" y2="200" class="wire-base" />
+          
+          <!-- Inductor Coiled Loops (y = 200 to 275) -->
+          <path d="M ${x},200 
+                   A 10,10 0 0,1 ${x},220 
+                   A 10,10 0 0,1 ${x},240 
+                   A 10,10 0 0,1 ${x},260 
+                   A 10,10 0 0,1 ${x},275" 
+                fill="none" stroke="#f59e0b" stroke-width="2.6" stroke-linecap="round" />
+          <text x="${x + 22}" y="242" class="load-text" font-size="16" font-weight="bold" fill="#f59e0b" text-anchor="start">L</text>
+          
+          <!-- Bottom lead to DC- rail -->
+          <line x1="${x}" y1="275" x2="${x}" y2="${yBottom}" class="wire-base" />
+          <!-- Polarity -->
+          <text x="${x - 18}" y="${yTop + 20}" fill="#10b981" font-weight="bold" font-family="monospace" font-size="14">+</text>
+          <text x="${x - 18}" y="${yBottom - 10}" fill="#38bdf8" font-weight="bold" font-family="monospace" font-size="14">-</text>
+        </g>
+      `;
+    }
+
+    // RLE Load
     return `
       <g id="load-group">
-        <!-- Top and Bottom Leads -->
-        <line x1="${x}" y1="${yTop}" x2="${x}" y2="${boxY}" class="wire-base" />
-        <line x1="${x}" y1="${boxY + height}" x2="${x}" y2="${yBottom}" class="wire-base" />
-
-        <!-- Load Container Box -->
-        <rect x="${x - 36}" y="${boxY}" width="72" height="${height}" class="load-box" />
-
-        <!-- Resistor Symbol / Text -->
-        <rect x="${x - 14}" y="${boxY + 12}" width="28" height="34" fill="#0f172a" stroke="#00f2fe" stroke-width="1.8" rx="3" />
-        <text x="${x}" y="${boxY + 33}" class="load-text" font-weight="bold">R</text>
-
-        <!-- Inductor (if present) -->
-        ${loadType.includes('RL') ? `
-          <g transform="translate(${x}, ${boxY + 68})">
-            <path d="M -16,0 A 6,6 0 0,1 -6,0 A 6,6 0 0,1 4,0 A 6,6 0 0,1 14,0" fill="none" stroke="#f59e0b" stroke-width="2" />
-            <text x="0" y="16" class="load-text" fill="#f59e0b" font-size="10">L (Ind)</text>
-          </g>
-        ` : ''}
-
-        <!-- DC Battery E (if RLE) -->
-        ${loadType === 'RLE' ? `
-          <g transform="translate(${x}, ${boxY + 108})">
-            <line x1="-14" y1="-4" x2="14" y2="-4" stroke="#ec4899" stroke-width="2.5" />
-            <line x1="-8" y1="4" x2="8" y2="4" stroke="#ec4899" stroke-width="2.5" />
-            <text x="0" y="20" class="load-text" fill="#ec4899" font-size="10">E (+/-)</text>
-          </g>
-        ` : ''}
-
-        <!-- DC Polarity Markers -->
-        <text x="${x + 28}" y="${yTop + 16}" fill="#10b981" font-weight="bold" font-family="monospace">+</text>
-        <text x="${x + 28}" y="${yBottom - 8}" fill="#38bdf8" font-weight="bold" font-family="monospace">-</text>
-        <text x="${x}" y="${yBottom + 20}" class="load-text" fill="#cbd5e1">DC LOAD</text>
+        <!-- Top lead to Resistor -->
+        <line x1="${x}" y1="${yTop}" x2="${x}" y2="90" class="wire-base" />
+        <!-- Resistor Zig-Zag (y = 90 to 145) -->
+        <path d="M ${x},90 L ${x},96 L ${x + 10},104 L ${x - 10},114 L ${x + 10},124 L ${x - 10},134 L ${x},140 L ${x},145" 
+              fill="none" stroke="#00f2fe" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="${x + 20}" y="122" class="load-text" font-size="15" font-weight="bold" fill="#00f2fe" text-anchor="start">R</text>
+        
+        <!-- Connecting wire -->
+        <line x1="${x}" y1="145" x2="${x}" y2="170" class="wire-base" />
+        <!-- Inductor Loops (y = 170 to 225) -->
+        <path d="M ${x},170 A 9,9 0 0,1 ${x},188 A 9,9 0 0,1 ${x},206 A 9,9 0 0,1 ${x},225" 
+              fill="none" stroke="#f59e0b" stroke-width="2.4" stroke-linecap="round" />
+        <text x="${x + 20}" y="202" class="load-text" font-size="15" font-weight="bold" fill="#f59e0b" text-anchor="start">L</text>
+        
+        <!-- Connecting wire -->
+        <line x1="${x}" y1="225" x2="${x}" y2="250" class="wire-base" />
+        <!-- DC Battery E (y = 250 to 275) -->
+        <line x1="${x - 16}" y1="258" x2="${x + 16}" y2="258" stroke="#ec4899" stroke-width="2.8" />
+        <line x1="${x - 9}" y1="267" x2="${x + 9}" y2="267" stroke="#ec4899" stroke-width="2.8" />
+        <text x="${x + 20}" y="266" class="load-text" font-size="14" font-weight="bold" fill="#ec4899" text-anchor="start">E</text>
+        
+        <!-- Bottom lead -->
+        <line x1="${x}" y1="267" x2="${x}" y2="${yBottom}" class="wire-base" />
+        <!-- Polarity -->
+        <text x="${x - 18}" y="${yTop + 20}" fill="#10b981" font-weight="bold" font-family="monospace" font-size="14">+</text>
+        <text x="${x - 18}" y="${yBottom - 10}" fill="#38bdf8" font-weight="bold" font-family="monospace" font-size="14">-</text>
       </g>
     `;
   }
@@ -233,83 +294,73 @@ export class SchematicRenderer {
 
   // =========================================================================
   // 1-PHASE FULL-WAVE BRIDGE SCHEMATIC
-  // Standard 4-device bridge where all 4 devices point UPWARDS towards DC+
-  // Wire connections route cleanly to leg midpoints without intersecting devices
+  // Matches textbook reference with wide-spaced AC source connections,
+  // clean IEEE jumper crossover, and pure series R + L load symbols.
   // =========================================================================
   render1PhFullBridge(isThy, load) {
     const t = isThy ? 'T' : 'D';
     const hasFWD = load === 'RL_FWD';
 
-    // Leg 1 at x = 180 (T1 top, T4 bottom)
-    // Leg 2 at x = 280 (T3 top, T2 bottom)
-    // DC Positive rail at y = 70
-    // DC Negative rail at y = 310
-    // Upper devices: yTop = 70, yBottom = 175
-    // Lower devices: yTop = 205, yBottom = 310
-    // Midpoint wire space: y = 175 to 205 (open gap)
-    // AC Line 1 enters Leg 1 at y = 185
-    // AC Line 2 enters Leg 2 at y = 195 (arches over Leg 1 at x = 180)
-
     return `
       <!-- AC Source on Left -->
-      <g id="ac-source" transform="translate(65, 190)">
-        <circle cx="0" cy="0" r="26" fill="#1e293b" stroke="#00f2fe" stroke-width="2.5" />
-        <path d="M -11,0 Q -5,-13 0,0 T 11,0" fill="none" stroke="#00f2fe" stroke-width="2.2" />
-        <text x="0" y="42" class="source-label" text-anchor="middle">v<tspan dy="3" font-size="9">s</tspan><tspan dy="-3">(t)</tspan></text>
+      <g id="ac-source" transform="translate(65, 195)">
+        <circle cx="0" cy="0" r="24" fill="#1e293b" stroke="#00f2fe" stroke-width="2.5" />
+        <path d="M -10,0 Q -5,-12 0,0 T 10,0" fill="none" stroke="#00f2fe" stroke-width="2.2" />
+        <text x="32" y="5" class="source-label" font-size="14" font-weight="bold" text-anchor="start">Vs</text>
       </g>
 
-      <!-- AC Input Lines to Leg Midpoints -->
-      <!-- Line 1: from AC source top (65, 164) down to y=185, straight into Leg 1 Midpoint (180, 185) -->
-      <path id="wire-ac1" d="M 65,164 L 65,185 L 180,185" class="wire-base" />
+      <!-- AC Input Line 1 (Phase / Node A): Wide route above into Leg 1 midpoint -->
+      <path id="wire-ac1" d="M 65,171 L 65,105 L 135,105 L 135,175 L 190,175" class="wire-base" />
 
-      <!-- Line 2: from AC source bot (65, 216) up to y=195, jumps over Leg 1 at x=180 into Leg 2 Midpoint (280, 195) -->
-      <path id="wire-ac2" d="M 65,216 L 65,195 L 172,195 A 8 8 0 0 1 188,195 L 280,195" class="wire-base" />
+      <!-- AC Input Line 2 (Neutral / Node B): Wide route below with IEEE Jumper over Leg 1 into Leg 2 midpoint -->
+      <path id="wire-ac2" d="M 65,219 L 65,285 L 135,285 L 135,215 L 180,215 A 10 10 0 0 1 200,215 L 310,215" class="wire-base" />
 
-      <!-- Leg Midpoint Vertical Connecting Wires between Upper and Lower Devices -->
-      <line x1="180" y1="175" x2="180" y2="205" class="wire-base" />
-      <line x1="280" y1="175" x2="280" y2="205" class="wire-base" />
+      <!-- Leg 1 Midpoint Vertical Connecting Wire -->
+      <line x1="190" y1="155" x2="190" y2="235" class="wire-base" />
+      <!-- Leg 2 Midpoint Vertical Connecting Wire -->
+      <line x1="310" y1="155" x2="310" y2="235" class="wire-base" />
 
-      <!-- Junction dots at AC leg midpoints -->
-      ${this.dot(180, 185)}
-      ${this.dot(280, 195)}
+      <!-- AC Midpoint Junction Dots -->
+      ${this.dot(190, 175)}
+      ${this.dot(310, 215)}
 
-      <!-- TOP DC POSITIVE RAIL (y = 70) -->
-      <line x1="180" y1="70" x2="440" y2="70" class="wire-base" id="rail-dc-pos" />
-      <text x="360" y="60" fill="#10b981" font-size="11" font-family="monospace" font-weight="bold">+ DC Rail</text>
-      ${this.dot(180, 70)}
-      ${this.dot(280, 70)}
+      <!-- TOP DC POSITIVE RAIL (y = 65) -->
+      <line x1="190" y1="65" x2="440" y2="65" class="wire-base" id="rail-dc-pos" />
+      <text x="375" y="52" fill="#10b981" font-size="11" font-family="monospace" font-weight="bold">+ DC Rail</text>
+      ${this.dot(190, 65)}
+      ${this.dot(310, 65)}
+      ${this.dot(440, 65)}
 
-      <!-- BOTTOM DC NEGATIVE RAIL (y = 310) -->
-      <line x1="180" y1="310" x2="440" y2="310" class="wire-base" id="rail-dc-neg" />
-      <text x="360" y="328" fill="#38bdf8" font-size="11" font-family="monospace" font-weight="bold">- DC Rail</text>
-      ${this.dot(180, 310)}
-      ${this.dot(280, 310)}
+      <!-- BOTTOM DC NEGATIVE RAIL (y = 325) -->
+      <line x1="190" y1="325" x2="440" y2="325" class="wire-base" id="rail-dc-neg" />
+      <text x="375" y="342" fill="#38bdf8" font-size="11" font-family="monospace" font-weight="bold">- DC Rail</text>
+      ${this.dot(190, 325)}
+      ${this.dot(310, 325)}
+      ${this.dot(440, 325)}
 
-      <!-- ================= BRIDGE LEG 1 (x = 180) ================= -->
-      <!-- Top Device T1 / D1 (points UP from midpoint 175 to top rail 70) -->
-      ${this.verticalDevice(`${t}1`, `${t}1`, 180, 70, 175, isThy)}
+      <!-- ================= BRIDGE LEG 1 (x = 190) ================= -->
+      <!-- Top Device T1 / D1 (points UP from midpoint 155 to top rail 65) -->
+      ${this.verticalDevice(`${t}1`, `${t}1`, 190, 65, 155, isThy, 'left')}
 
-      <!-- Bottom Device T4 / D4 (points UP from bottom rail 310 to midpoint 205) -->
-      ${this.verticalDevice(`${t}4`, `${t}4`, 180, 205, 310, isThy)}
+      <!-- Bottom Device T4 / D4 (points UP from bottom rail 325 to midpoint 235) -->
+      ${this.verticalDevice(`${t}4`, `${t}4`, 190, 235, 325, isThy, 'right')}
 
-      <!-- ================= BRIDGE LEG 2 (x = 280) ================= -->
-      <!-- Top Device T3 / D3 (points UP from midpoint 175 to top rail 70) -->
-      ${this.verticalDevice(`${t}3`, `${t}3`, 280, 70, 175, isThy)}
+      <!-- ================= BRIDGE LEG 2 (x = 310) ================= -->
+      <!-- Top Device T3 / D3 (points UP from midpoint 155 to top rail 65) -->
+      ${this.verticalDevice(`${t}3`, `${t}3`, 310, 65, 155, isThy, 'right')}
 
-      <!-- Bottom Device T2 / D2 (points UP from bottom rail 310 to midpoint 205) -->
-      ${this.verticalDevice(`${t}2`, `${t}2`, 280, 205, 310, isThy)}
+      <!-- Bottom Device T2 / D2 (points UP from bottom rail 325 to midpoint 235) -->
+      ${this.verticalDevice(`${t}2`, `${t}2`, 310, 235, 325, isThy, 'right')}
 
-      <!-- Optional Freewheeling Diode (FWD) at x = 360 -->
+      <!-- Optional Freewheeling Diode (FWD) at x = 375 -->
       ${hasFWD ? `
-        ${this.verticalDevice('FWD', 'D_FW', 360, 70, 310, false)}
-        ${this.dot(360, 70)}
-        ${this.dot(360, 310)}
+        ${this.verticalDevice('FWD', 'D_FW', 375, 65, 325, false, 'right')}
+        ${this.dot(375, 65)}
+        ${this.dot(375, 325)}
       ` : ''}
 
       <!-- DC LOAD at x = 440 -->
-      ${this.loadBlock(440, 70, 310, load)}
-      ${this.dot(440, 70)}
-      ${this.dot(440, 310)}
+      ${this.loadBlock(440, 65, 325, load)}
     `;
   }
 
@@ -498,15 +549,15 @@ export class SchematicRenderer {
     if (!is3ph && isFull) {
       if (conductingDevices.includes('T1') || conductingDevices.includes('D1')) {
         // Positive cycle: Source(+) -> Line 1 -> T1 -> +DC Rail -> Load -> -DC Rail -> T2 -> Line 2 (jumper) -> Source(-)
-        return 'M 65,164 L 65,185 L 180,185 L 180,70 L 440,70 L 440,310 L 280,310 L 280,195 L 188,195 A 8 8 0 0 0 172,195 L 65,195 L 65,216';
+        return 'M 65,171 L 65,105 L 135,105 L 135,175 L 190,175 L 190,65 L 440,65 L 440,325 L 310,325 L 310,215 L 200,215 A 10 10 0 0 0 180,215 L 135,215 L 135,285 L 65,285 L 65,219';
       }
       if (conductingDevices.includes('T3') || conductingDevices.includes('D3') || conductingDevices.includes('T4') || conductingDevices.includes('D4')) {
         // Negative cycle: Source(-) -> Line 2 (jumper) -> T3 -> +DC Rail -> Load -> -DC Rail -> T4 -> Line 1 -> Source(+)
-        return 'M 65,216 L 65,195 L 172,195 A 8 8 0 0 1 188,195 L 280,195 L 280,70 L 440,70 L 440,310 L 180,310 L 180,185 L 65,185 L 65,164';
+        return 'M 65,219 L 65,285 L 135,285 L 135,215 L 180,215 A 10 10 0 0 1 200,215 L 310,215 L 310,65 L 440,65 L 440,325 L 190,325 L 190,175 L 135,175 L 135,105 L 65,105 L 65,171';
       }
       if (conductingDevices.includes('FWD')) {
         // Freewheeling loop: Load bottom -> FWD bottom -> UP FWD -> Load top -> DOWN Load
-        return 'M 440,310 L 360,310 L 360,70 L 440,70 L 440,310';
+        return 'M 440,325 L 375,325 L 375,65 L 440,65 L 440,325';
       }
     }
 
